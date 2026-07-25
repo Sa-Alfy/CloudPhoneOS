@@ -1,6 +1,7 @@
 # 📱 CloudKit OS
 
-[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![License: AGPL v3](https://img.shields.io/badge/License-AGPL_v3-blue.svg)](LICENSE)
+
 [![Platform: Web / Cloud Widget](https://img.shields.io/badge/Platform-Web%20%2F%20Cloud-orange.svg)](#)
 [![Dependencies: None](https://img.shields.io/badge/Dependencies-None-brightgreen.svg)](#)
 [![Built with: Vanilla JS & CSS](https://img.shields.io/badge/Built%20with-Vanilla%20JS%20%26%20CSS-blueviolet.svg)](#)
@@ -100,4 +101,5 @@ A simulation control pad floats on the bottom-right corner when testing on PC. U
 ---
 
 ## 📜 License
-Distributed under the MIT License. See [LICENSE](LICENSE) for more details.
+Distributed under the GNU Affero General Public License v3 (AGPL-3.0). See [LICENSE](LICENSE) for more details.
+
