@@ -79,8 +79,10 @@ button { -webkit-tap-highlight-color: transparent; }
 
 .ck-app {
   flex: 1;
-  padding: 12px 16px 150px;
-  overflow: auto;
+  min-height: 0;          /* Required for flex child to shrink and scroll */
+  padding: 12px 16px 80px;
+  overflow-y: scroll;     /* 'scroll' is more reliable than 'auto' on Gecko/KaiOS */
+  -webkit-overflow-scrolling: touch; /* Momentum scrolling on WebKit & older Gecko */
   overscroll-behavior: contain;
 }
 
@@ -488,7 +490,7 @@ button { -webkit-tap-highlight-color: transparent; }
   .ck-header   { padding: 10px 12px 8px; }
 
   /* App area */
-  .ck-app  { padding: 8px 10px 120px; }
+  .ck-app  { padding: 8px 10px 80px; }
 
   /* List items */
   .ck-item         { padding: 10px 12px; border-radius: 12px; }

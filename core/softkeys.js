@@ -38,12 +38,28 @@ export function initSoftKeys({ onLeft, onCenter, onRight } = {}) {
   if (rskBtn) rskBtn.addEventListener('click', () => currentCallbacks.onRight?.());
 
   window.addEventListener('keydown', (event) => {
-    if ((event.key === 'F1' || event.key === 'SoftLeft') && currentCallbacks.onLeft) {
+    // Left softkey — various KaiOS/W3C key names
+    if (event.key === 'SoftLeft' || event.key === 'F1') {
       event.preventDefault();
-      currentCallbacks.onLeft();
-    } else if ((event.key === 'F2' || event.key === 'SoftRight') && currentCallbacks.onRight) {
+      currentCallbacks.onLeft?.();
+      return;
+    }
+
+    // Right softkey / back key — covers all KaiOS device variants:
+    // SoftRight, F2, Backspace (left softkey on some builds maps here),
+    // and the dedicated EndCall key.
+    if (
+      event.key === 'SoftRight' ||
+      event.key === 'F2' ||
+      event.key === 'EndCall' ||
+      event.key === 'Backspace'
+    ) {
+      // Don't intercept Backspace inside editable fields (textarea, input)
+      const tag = document.activeElement?.tagName;
+      if (event.key === 'Backspace' && (tag === 'INPUT' || tag === 'TEXTAREA')) return;
+
       event.preventDefault();
-      currentCallbacks.onRight();
+      currentCallbacks.onRight?.();
     }
   });
 

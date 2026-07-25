@@ -31,7 +31,18 @@ export function setFocused(element) {
   focusableItems.forEach((node) => node.classList.remove('is-focused'));
   target.classList.add('is-focused');
 
-  target.scrollIntoView({ block: 'nearest', inline: 'nearest' });
+  // Scroll within the .ck-app container instead of using scrollIntoView on the
+  // document — scrollIntoView can push the sticky header off-screen on KaiOS/Gecko.
+  const scrollRoot = container?.closest('.ck-app') ?? container;
+  if (scrollRoot) {
+    const elRect   = target.getBoundingClientRect();
+    const rootRect = scrollRoot.getBoundingClientRect();
+    if (elRect.bottom > rootRect.bottom - 8) {
+      scrollRoot.scrollTop += elRect.bottom - rootRect.bottom + 8;
+    } else if (elRect.top < rootRect.top + 8) {
+      scrollRoot.scrollTop -= rootRect.top - elRect.top + 8;
+    }
+  }
 }
 
 // Call this to trigger the currently focused element.
@@ -180,10 +191,9 @@ export function initNav(selector = '#app') {
           event.preventDefault();
           activateFocused();
           break;
-        case 'Backspace':
-          event.preventDefault();
-          window.dispatchEvent(new Event('ck:back'));
-          break;
+        // NOTE: Backspace is intentionally NOT handled here.
+        // On KaiOS, the left softkey maps to Backspace on many devices.
+        // Back navigation is handled exclusively by softkeys.js (SoftLeft / F1 / ck:back).
       }
     });
 
