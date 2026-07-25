@@ -1,6 +1,18 @@
 import { Toast } from '../core/components.js';
 import { setSoftKeys } from '../core/softkeys.js';
 
+export const manifest = {
+  id: 'translator',
+  name: 'Translator',
+  icon: '🌐',
+  order: 5,
+  description: 'Language translation.',
+  version: '1.0',
+  keywords: ['language', 'translate', 'bengali', 'english', 'convert'],
+  route: 'translator'
+};
+
+
 
 const PAIRS = {
   'hello': 'হ্যালো',

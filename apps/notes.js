@@ -2,6 +2,18 @@ import { load, save } from '../core/storage.js';
 import { Toast } from '../core/components.js';
 import { setSoftKeys } from '../core/softkeys.js';
 
+export const manifest = {
+  id: 'notes',
+  name: 'Notes',
+  icon: '📝',
+  order: 2,
+  description: 'Quick text notes.',
+  version: '1.0',
+  keywords: ['text', 'memo', 'pad', 'write', 'journal'],
+  route: 'notes'
+};
+
+
 export function renderNotes({ root, router }) {
   const notes = load('notes', []);
   const wrapper = document.createElement('div');

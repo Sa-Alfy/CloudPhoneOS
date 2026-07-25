@@ -3,6 +3,18 @@ import { setSoftKeys } from '../core/softkeys.js';
 import { save, load } from '../core/storage.js';
 import { LoadingState, ErrorState, OfflineState, EmptyState } from '../core/components.js';
 
+export const manifest = {
+  id: 'dictionary',
+  name: 'Dictionary',
+  icon: '📖',
+  order: 4,
+  description: 'Word definitions & phonetics.',
+  version: '1.0',
+  keywords: ['words', 'definition', 'meaning', 'lexicon', 'vocab'],
+  route: 'dictionary'
+};
+
+
 const CACHE_KEY  = 'dict:cache';
 const DICT_API   = 'https://api.dictionaryapi.dev/api/v2/entries/en/';
 

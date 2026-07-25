@@ -1,4 +1,5 @@
 import { getFocusIndex } from './nav.js';
+import { appRegistry } from './app-registry.js';
 
 export class Router {
   constructor({ root, subtitle }) {
@@ -9,6 +10,7 @@ export class Router {
     this.current = null;
     this._lastNavTime = 0;
   }
+
 
   register(name, renderFn, options = {}) {
     this.routes.set(name, {
@@ -60,8 +62,10 @@ export class Router {
     }
 
     this._clearClock();
+    appRegistry.recordLaunch(name);
     this.current = { name, params };
     this.root.innerHTML = '';
+
     this.root.scrollTop = 0;
     route.renderFn({ root: this.root, router: this, params });
     this.updateHeader(route.label);

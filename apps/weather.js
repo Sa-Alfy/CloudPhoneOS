@@ -2,6 +2,18 @@ import { Toast } from '../core/components.js';
 import { setSoftKeys } from '../core/softkeys.js';
 import { save, load } from '../core/storage.js';
 
+export const manifest = {
+  id: 'weather',
+  name: 'Weather',
+  icon: '☁️',
+  order: 3,
+  description: 'Current conditions & forecast.',
+  version: '1.0',
+  keywords: ['climate', 'forecast', 'rain', 'temperature', 'sun', 'cloud'],
+  route: 'weather'
+};
+
+
 const CACHE_KEY = 'weather:cache';
 
 const WEATHER_CODES = {

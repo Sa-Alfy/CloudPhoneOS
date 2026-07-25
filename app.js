@@ -2,15 +2,16 @@ import { initNav } from './core/nav.js';
 import { initSoftKeys } from './core/softkeys.js';
 import { initTheme } from './core/theme.js';
 import { Router } from './core/router.js';
+import { appRegistry } from './core/app-registry.js';
 import { Toast, Dialog } from './core/components.js';
 import { renderHome } from './apps/home.js';
-import { renderCalculator } from './apps/calculator.js';
-import { renderNotes } from './apps/notes.js';
-import { renderSettings } from './apps/settings.js';
-import { renderTranslator } from './apps/translator.js';
-import { renderWeather } from './apps/weather.js';
-import { renderDictionary } from './apps/dictionary.js';
-import { renderPlaceholder } from './apps/placeholder.js';
+import { renderCalculator, manifest as calcManifest } from './apps/calculator.js';
+import { renderNotes, manifest as notesManifest } from './apps/notes.js';
+import { renderSettings, manifest as settingsManifest } from './apps/settings.js';
+import { renderTranslator, manifest as translatorManifest } from './apps/translator.js';
+import { renderWeather, manifest as weatherManifest } from './apps/weather.js';
+import { renderDictionary, manifest as dictManifest } from './apps/dictionary.js';
+import { renderPlaceholder, aiManifest } from './apps/placeholder.js';
 
 initTheme();
 initNav('#app');
@@ -21,23 +22,35 @@ const router = new Router({
   status: '#ck-status'
 });
 
-router.register('home',       renderHome,       { label: 'Launcher' });
-router.register('calculator', renderCalculator, { label: 'Calculator' });
-router.register('notes',      renderNotes,      { label: 'Notes' });
-router.register('settings',   renderSettings,   { label: 'Settings' });
-router.register('translator', renderTranslator, { label: 'Translator' });
-router.register('weather',    renderWeather,    { label: 'Weather' });
-router.register('dictionary', renderDictionary, { label: 'Dictionary' });
+// App manifest list
+const appConfigs = [
+  { manifest: calcManifest, render: renderCalculator },
+  { manifest: notesManifest, render: renderNotes },
+  { manifest: weatherManifest, render: renderWeather },
+  { manifest: dictManifest, render: renderDictionary },
+  { manifest: translatorManifest, render: renderTranslator },
+  { manifest: settingsManifest, render: renderSettings },
+  {
+    manifest: aiManifest,
+    render: ({ root, router: r, params }) => renderPlaceholder({
+      root,
+      router: r,
+      title: 'AI Assistant',
+      subtitle: 'Phase 4 feature',
+      message: 'The AI module will be attached after the launcher, notes, translator, weather, and dictionary screens are locked in.'
+    })
+  }
+];
 
-// Placeholder screens receive the full {root, router, params} from the router.
-// Previously this was () => renderPlaceholder({...}) which silently dropped root/router.
-router.register('ai', ({ root, router: r, params }) => renderPlaceholder({
-  root,
-  router: r,
-  title: 'AI Assistant',
-  subtitle: 'Phase 4 feature',
-  message: 'The AI module will be attached after the launcher, notes, translator, weather, and dictionary screens are locked in.'
-}), { label: 'AI Assistant' });
+// Register Home launcher route
+router.register('home', renderHome, { label: 'Launcher' });
+
+// Explicitly register apps in AppRegistry and Router
+appConfigs.forEach(({ manifest, render }) => {
+  appRegistry.register(manifest);
+  router.register(manifest.route, render, { label: manifest.name });
+});
+
 
 // Softkeys: left = app-defined, center = activates focused element (handled by
 // softkeys.js directly — no synthetic keydown dispatch), right = back.

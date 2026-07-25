@@ -1,6 +1,18 @@
 import { Toast } from '../core/components.js';
 import { setSoftKeys } from '../core/softkeys.js';
 
+export const manifest = {
+  id: 'calculator',
+  name: 'Calculator',
+  icon: '🧮',
+  order: 1,
+  description: 'Quick calculations.',
+  version: '1.0',
+  keywords: ['math', 'calc', 'add', 'subtract', 'numbers', 'equal'],
+  route: 'calculator'
+};
+
+
 // DEV_MODE: enables direct keyboard number/operator input on PC.
 // Auto-detected: true on wide screens (desktop/laptop), false on real phone screens.
 const DEV_MODE = window.screen.width > 480;

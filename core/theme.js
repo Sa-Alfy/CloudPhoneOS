@@ -11,3 +11,8 @@ export function toggleTheme() {
   save('theme', next);
   return next;
 }
+
+export function getTheme() {
+  return document.documentElement.dataset.theme || 'dark';
+}
+
