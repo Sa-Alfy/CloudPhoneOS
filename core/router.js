@@ -23,6 +23,26 @@ export class Router {
       .join(' ');
   }
 
+  // Stop the clock interval when leaving the home screen.
+  _clearClock() {
+    const statusEl = document.getElementById('ck-status');
+    if (statusEl?.dataset.clockId) {
+      clearInterval(Number(statusEl.dataset.clockId));
+      delete statusEl.dataset.clockId;
+      statusEl.innerHTML = navigator.onLine ? '📶 Online' : '⚠️ Offline';
+      statusEl.style.color = navigator.onLine ? '' : 'var(--focus)';
+    }
+  }
+
+  // Fade the app root in after a render.
+  _fadeIn() {
+    if (!this.root) return;
+    this.root.classList.remove('ck-fade-in');
+    // Force reflow so the animation restarts each time.
+    void this.root.offsetWidth;
+    this.root.classList.add('ck-fade-in');
+  }
+
   open(name, params = {}, { pushHistory = true } = {}) {
     const route = this.routes.get(name);
     if (!route || !this.root) return;
@@ -34,10 +54,13 @@ export class Router {
       });
     }
 
+    this._clearClock();
     this.current = { name, params };
     this.root.innerHTML = '';
+    this.root.scrollTop = 0;
     route.renderFn({ root: this.root, router: this, params });
     this.updateHeader(route.label);
+    this._fadeIn();
     window.dispatchEvent(new CustomEvent('ck:rendered', { detail: { focusIndex: 0 } }));
   }
 
@@ -51,10 +74,13 @@ export class Router {
     const route = this.routes.get(previous.name);
     if (!route || !this.root) return;
 
+    this._clearClock();
     this.current = previous;
     this.root.innerHTML = '';
+    this.root.scrollTop = 0;
     route.renderFn({ root: this.root, router: this, params: previous.params || {} });
     this.updateHeader(route.label);
+    this._fadeIn();
     window.dispatchEvent(new CustomEvent('ck:rendered', { detail: { focusIndex: previous.focusIndex ?? 0 } }));
   }
 
@@ -62,4 +88,5 @@ export class Router {
     if (this.subtitle) this.subtitle.textContent = label;
   }
 }
+
 

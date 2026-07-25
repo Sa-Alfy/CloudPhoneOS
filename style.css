@@ -25,8 +25,9 @@
 }
 
 * { box-sizing: border-box; }
-html, body { height: 100%; }
+html { height: 100%; overflow: hidden; }
 body {
+  height: 100%;
   margin: 0;
   background: var(--bg);
   color: var(--fg);
@@ -38,9 +39,11 @@ button, textarea, input, select { font: inherit; }
 button { -webkit-tap-highlight-color: transparent; }
 
 .app-shell {
-  min-height: 100vh;
+  height: 100dvh;
+  height: 100vh; /* fallback */
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .ck-header {
@@ -65,12 +68,13 @@ button { -webkit-tap-highlight-color: transparent; }
 }
 
 .ck-status {
-  font-size: 12px;
+  font-size: 13px;
+  font-weight: 600;
   color: var(--muted);
-  padding: 6px 10px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--surface);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  letter-spacing: 0.03em;
 }
 
 .ck-app {
@@ -78,6 +82,15 @@ button { -webkit-tap-highlight-color: transparent; }
   padding: 12px 16px 150px;
   overflow: auto;
   overscroll-behavior: contain;
+}
+
+/* Screen fade-in on navigation */
+@keyframes ck-fadein {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.ck-fade-in {
+  animation: ck-fadein 140ms ease both;
 }
 
 .ck-list {
@@ -108,10 +121,18 @@ button { -webkit-tap-highlight-color: transparent; }
   background: var(--focus);
   color: var(--focus-fg);
   border-color: transparent;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 40%, transparent), var(--shadow);
 }
 
 .ck-item.is-focused .ck-item__meta { color: rgba(255,255,255,.82); }
 .ck-item.is-pressed { transform: scale(.985); }
+
+/* Disabled / coming-soon items */
+.ck-item--disabled {
+  opacity: 0.38;
+  cursor: not-allowed;
+  pointer-events: none;
+}
 
 .ck-screen {
   display: grid;
@@ -175,6 +196,7 @@ button { -webkit-tap-highlight-color: transparent; }
   background: var(--focus);
   color: var(--focus-fg);
   border-color: transparent;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 40%, transparent);
 }
 
 .ck-actions {
@@ -455,6 +477,66 @@ button { -webkit-tap-highlight-color: transparent; }
   .ck-title { font-size: 22px; }
   .ck-item__label { font-size: 16px; }
   .dev-controls { transform: scale(.86); right: 6px; bottom: 58px; }
+}
+
+/* ── Cloud Phone / Feature Phone screens (≤320px wide) ─────────────────── */
+@media (max-width: 320px) {
+  /* Header */
+  .ck-title    { font-size: 18px; }
+  .ck-subtitle { font-size: 11px; }
+  .ck-status   { font-size: 10px; padding: 4px 8px; }
+  .ck-header   { padding: 10px 12px 8px; }
+
+  /* App area */
+  .ck-app  { padding: 8px 10px 120px; }
+
+  /* List items */
+  .ck-item         { padding: 10px 12px; border-radius: 12px; }
+  .ck-item__label  { font-size: 14px; }
+  .ck-item__meta   { font-size: 11px; }
+
+  /* Panels */
+  .ck-panel  { padding: 12px; border-radius: 12px; }
+  .ck-panel__title { font-size: 16px; }
+
+  /* Softkeys */
+  .ck-softkeys { padding: 8px 8px 12px; gap: 6px; }
+  .ck-softkeys button { min-height: 34px; font-size: 12px; }
+
+  /* Weather hero — scaled for a 240px screen */
+  .ck-weather-hero         { padding: 14px 10px; border-radius: 14px; }
+  .ck-weather-hero__icon   { font-size: 36px; margin-bottom: 4px; }
+  .ck-weather-hero__temp   { font-size: 30px; margin-bottom: 4px; }
+  .ck-weather-hero__location { font-size: 14px; }
+  .ck-weather-hero__cond   { font-size: 12px; }
+
+  /* Weather stat grid — single column on tiny screens */
+  .ck-weather-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
+  .ck-weather-stat { padding: 10px; border-radius: 10px; }
+  .ck-weather-stat__value { font-size: 15px; margin-top: 4px; }
+  .ck-weather-stat__label { font-size: 10px; }
+
+  /* Calculator */
+  .ck-calc-result { font-size: 22px; }
+  .ck-calc-key    { min-height: 44px; font-size: 14px; }
+
+  /* General keys/buttons */
+  .ck-key, .ck-action { min-height: 42px; font-size: 13px; }
+
+  /* Inputs */
+  .ck-input, .ck-select { min-height: 40px; }
+
+  /* Hide dev controls on tiny real screens — they're only useful on desktop */
+  .dev-controls { display: none; }
+}
+
+/* ── Ultra-small (240px — classic feature phone) ───────────────────────── */
+@media (max-width: 240px) {
+  .ck-weather-hero__icon { font-size: 28px; }
+  .ck-weather-hero__temp { font-size: 24px; }
+  .ck-weather-grid { grid-template-columns: 1fr; }
+  .ck-grid { grid-template-columns: repeat(3, 1fr); }
+  .ck-calc-pad { grid-template-columns: repeat(3, 1fr); }
 }
 
 /* Shared state panels (Loading / Error / Offline / Empty) */

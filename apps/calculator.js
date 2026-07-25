@@ -2,8 +2,8 @@ import { Toast } from '../core/components.js';
 import { setSoftKeys } from '../core/softkeys.js';
 
 // DEV_MODE: enables direct keyboard number/operator input on PC.
-// Set to false (or check hostname) for production/device builds.
-const DEV_MODE = true;
+// Auto-detected: true on wide screens (desktop/laptop), false on real phone screens.
+const DEV_MODE = window.screen.width > 480;
 
 function calc(expr) {
   if (!expr) return '';

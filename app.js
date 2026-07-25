@@ -57,6 +57,18 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
+// Online / Offline status indicator — updates the header pill in real time.
+// The clock overwrites this on the home screen; it restores when leaving home.
+function updateOnlineStatus() {
+  const statusEl = document.getElementById('ck-status');
+  if (!statusEl || statusEl.dataset.clockId) return; // clock is active — leave it alone
+  statusEl.innerHTML = navigator.onLine ? '📶 Online' : '⚠️ Offline';
+  statusEl.style.color = navigator.onLine ? '' : 'var(--focus)';
+}
+window.addEventListener('online',  updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+updateOnlineStatus();
+
 // Custom events for external/programmatic navigation
 window.addEventListener('ck:navigate-home', () => router.open('home'));
 window.addEventListener('ck:open', (e) => {

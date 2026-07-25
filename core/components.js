@@ -78,7 +78,12 @@ export function renderMenu(root, items, { emptyMessage = 'Nothing here yet' } = 
     const button = document.createElement('button');
     button.type = 'button';
     button.className = 'ck-item';
-    button.dataset.focusable = '';
+    if (item.disabled) {
+      button.setAttribute('aria-disabled', 'true');
+      button.classList.add('ck-item--disabled');
+    } else {
+      button.dataset.focusable = '';
+    }
     button.innerHTML = `
       <span class="ck-item__label">${item.label}</span>
       ${item.meta ? `<span class="ck-item__meta">${item.meta}</span>` : ''}

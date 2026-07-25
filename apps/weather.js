@@ -194,10 +194,19 @@ export function renderWeather({ root, router }) {
     );
   }
 
-  const doSearch = () => searchCity(cityInput.value).catch((err) => {
-    setEmpty('Weather unavailable');
-    Toast(err.message || 'Network error');
-  });
+  const doSearch = () => {
+    searchBtn.textContent = '⏳';
+    searchBtn.setAttribute('disabled', '');
+    searchCity(cityInput.value)
+      .catch((err) => {
+        setEmpty('Weather unavailable');
+        Toast(err.message || 'Network error');
+      })
+      .finally(() => {
+        searchBtn.textContent = 'Search';
+        searchBtn.removeAttribute('disabled');
+      });
+  };
 
   setSoftKeys({
     left: 'Location',
