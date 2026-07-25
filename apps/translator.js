@@ -263,7 +263,7 @@ export function renderTranslator({ root }) {
     right: 'Back',
     onLeft: () => doTranslate(false),
     onCenter: null,
-    onRight: () => window.dispatchEvent(new Event('ck:back'))
+    onRight: () => router.back()
   });
 
   [translateBtn, swapBtn, clearBtn, backBtn].forEach((button) => {
@@ -279,7 +279,7 @@ export function renderTranslator({ root }) {
           clearAll();
           break;
         case 'back':
-          window.dispatchEvent(new Event('ck:back'));
+          router.back();
           break;
       }
     });

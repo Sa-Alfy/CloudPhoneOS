@@ -7,6 +7,7 @@ export class Router {
     this.routes = new Map();
     this.stack = [];
     this.current = null;
+    this._lastNavTime = 0;
   }
 
   register(name, renderFn, options = {}) {
@@ -44,6 +45,10 @@ export class Router {
   }
 
   open(name, params = {}, { pushHistory = true } = {}) {
+    const now = Date.now();
+    if (now - this._lastNavTime < 300) return;
+    this._lastNavTime = now;
+
     const route = this.routes.get(name);
     if (!route || !this.root) return;
 
@@ -65,6 +70,10 @@ export class Router {
   }
 
   back() {
+    const now = Date.now();
+    if (now - this._lastNavTime < 300) return;
+    this._lastNavTime = now;
+
     if (this.stack.length === 0) {
       window.dispatchEvent(new Event('ck:confirm-exit'));
       return;
