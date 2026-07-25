@@ -1,0 +1,103 @@
+# 📱 CloudKit OS
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![Platform: Web / Cloud Widget](https://img.shields.io/badge/Platform-Web%20%2F%20Cloud-orange.svg)](#)
+[![Dependencies: None](https://img.shields.io/badge/Dependencies-None-brightgreen.svg)](#)
+[![Built with: Vanilla JS & CSS](https://img.shields.io/badge/Built%20with-Vanilla%20JS%20%26%20CSS-blueviolet.svg)](#)
+
+> A lightweight, modular micro-OS shell and application framework designed for cloud phone widgets and keypad-driven web environments.
+
+```
+   ┌───────────────────────────────────────────────┐
+   │ 📶 12:00 AM                       CloudKit OS │
+   ├───────────────────────────────────────────────┤
+   │                                               │
+   │   🤖 AI Assistant        [Soon]               │
+   │   🌐 Translator          [Bangla ⇄ English]   │
+   │  👉🧮 Calculator          [Working]            │
+   │   ⛅ Weather             [Open-Meteo API]     │
+   │   📝 Notes               [Local Persistence]  │
+   │   ⚙️ Settings            [Theme Toggle]       │
+   │                                               │
+   ├───────────────────────────────────────────────┤
+   │    [Menu]            [Select]          [Exit] │
+   └───────────────────────────────────────────────┘
+```
+
+---
+
+## ✨ Features
+
+- 🔋 **Zero Build Steps**: Runs directly in any modern browser using native ES Modules.
+- 🎯 **Predictive Spatial D-Pad Navigation**: Fully optimized arrow/keypad navigation engine with intelligent proximity scoring to avoid jumpy grid movements.
+- ⚡ **Strict Single-Activation**: Robust click-event unification ensuring zero duplicate triggers between keypad `Enter` and mouse clicks.
+- 💾 **State & Focus Preservation**: Back navigation (`router.back()`) restores the exact page state, scroll offset, and item focus.
+- 🎹 **Context-Aware Softkeys**: An adaptive status bar (LSK/CSK/RSK) that changes its actions and labels based on the active application.
+- 🛠️ **Built-in Dev Controls**: Floating hardware-simulator overlay for quick mobile testing on PC screens.
+
+---
+
+## 🏛️ Repository Structure
+
+```
+CloudKit/
+├── apps/                 # Built-in Applications
+│   ├── home.js           # Launcher screen
+│   ├── calculator.js     # Standard key-grid calculator
+│   ├── notes.js          # Persistent local text editor
+│   ├── translator.js     # Bangla ⇄ English offline/online translator
+│   ├── weather.js        # Geolocation-enabled weather forecast app
+│   ├── settings.js       # App configuration and theme selector
+│   └── placeholder.js    # Unimplemented feature fallback screen
+│
+├── core/                 # Core Framework & OS Architecture
+│   ├── nav.js            # Spatial navigation and focus management
+│   ├── router.js         # Single-screen routing and history engine
+│   ├── softkeys.js       # Contextual left/center/right softkey manager
+│   ├── storage.js        # LocalStorage persistence wrapper
+│   └── theme.js          # Dark/Light theme toggles
+│
+├── index.html            # OS entrypoint and layout template
+├── style.css             # Main styling, themes, and layout tokens
+└── app.js                # App bootstrap & event wiring
+```
+
+---
+
+## 🚀 Getting Started
+
+No build or compiler steps are required. Simply host the folder with any static HTTP server.
+
+### 1. Run Locally
+Using Node (npx):
+```bash
+npx serve -l 8080
+```
+Or Python:
+```bash
+python -m http.server 8080
+```
+
+### 2. Open in Browser
+Visit `http://localhost:8080/` to launch the CloudKit Shell.
+
+---
+
+## 🕹️ Keyboard Controls
+
+| Key | Action |
+|-----|--------|
+| **Arrow Up / Down / Left / Right** | D-pad navigation between focusable items |
+| **Enter** | Center Softkey (CSK) / Trigger action |
+| **F1 / Escape** | Left Softkey (LSK) |
+| **F2 / Backspace** | Right Softkey (RSK) / Back |
+
+---
+
+## 🛠️ Developer Testing Mode
+A simulation control pad floats on the bottom-right corner when testing on PC. Use it to simulate hardware keys, test focus order, and debug screen flows under a device constraint.
+
+---
+
+## 📜 License
+Distributed under the MIT License. See [LICENSE](LICENSE) for more details.

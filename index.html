@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="theme-color" content="#000000">
+  <title>CloudKit</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div class="app-shell">
+    <header class="ck-header">
+      <div>
+        <div class="ck-title">CloudKit</div>
+        <div class="ck-subtitle" id="ck-subtitle">Launcher</div>
+      </div>
+      <div class="ck-status" id="ck-status">Online</div>
+    </header>
+
+    <main id="app" class="ck-app" aria-live="polite"></main>
+
+    <footer class="ck-softkeys">
+      <button id="lsk-btn" type="button">Menu</button>
+      <button id="csk-btn" type="button">Select</button>
+      <button id="rsk-btn" type="button">Back</button>
+    </footer>
+  </div>
+
+  <section class="dev-controls" aria-label="Acode test controls">
+    <div class="dev-controls__grid">
+      <span></span>
+      <button type="button" data-key="ArrowUp">▲</button>
+      <span></span>
+      <button type="button" data-key="ArrowLeft">◀</button>
+      <button type="button" data-key="Enter">OK</button>
+      <button type="button" data-key="ArrowRight">▶</button>
+      <span></span>
+      <button type="button" data-key="ArrowDown">▼</button>
+      <span></span>
+    </div>
+    <div class="dev-controls__row">
+      <button type="button" data-action="home">Home</button>
+      <button type="button" data-action="back">Back</button>
+      <button type="button" data-action="menu">Menu</button>
+    </div>
+  </section>
+
+  <script type="module" src="app.js"></script>
+</body>
+</html>
