@@ -23,6 +23,10 @@ function centerOf(element) {
   };
 }
 
+// How far from the top of .ck-app the focused item should appear (px).
+// 16px gives a small visual gap so the item isn't flush against the header.
+const SCROLL_MARGIN_TOP = 16;
+
 export function setFocused(element) {
   const focusableItems = focusables();
   if (!focusableItems.length) return;
@@ -31,17 +35,26 @@ export function setFocused(element) {
   focusableItems.forEach((node) => node.classList.remove('is-focused'));
   target.classList.add('is-focused');
 
-  // Scroll within the .ck-app container instead of using scrollIntoView on the
-  // document — scrollIntoView can push the sticky header off-screen on KaiOS/Gecko.
-  const scrollRoot = container?.closest('.ck-app') ?? container;
-  if (scrollRoot) {
-    const elRect   = target.getBoundingClientRect();
-    const rootRect = scrollRoot.getBoundingClientRect();
-    if (elRect.bottom > rootRect.bottom - 8) {
-      scrollRoot.scrollTop += elRect.bottom - rootRect.bottom + 8;
-    } else if (elRect.top < rootRect.top + 8) {
-      scrollRoot.scrollTop -= rootRect.top - elRect.top + 8;
-    }
+  // KaiOS-style scroll: anchor the focused item near the TOP of the scroll
+  // container so the user always sees items below it. When the first item is
+  // focused, snap back to scrollTop 0 so no gap ever appears at the top.
+  const scrollRoot = container?.closest?.('.ck-app') ?? container;
+  if (!scrollRoot) return;
+
+  const isFirst = focusableItems[0] === target;
+  if (isFirst) {
+    // Always reset to very top when the first item is focused.
+    scrollRoot.scrollTop = 0;
+    return;
+  }
+
+  const elRect   = target.getBoundingClientRect();
+  const rootRect = scrollRoot.getBoundingClientRect();
+  // Desired top edge of the focused element, relative to the scroll container.
+  const desiredTop = elRect.top - rootRect.top - SCROLL_MARGIN_TOP;
+
+  if (desiredTop !== 0) {
+    scrollRoot.scrollTop += desiredTop;
   }
 }
 
