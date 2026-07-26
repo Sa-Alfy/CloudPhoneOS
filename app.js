@@ -11,7 +11,7 @@ import { renderSettings, manifest as settingsManifest } from './apps/settings.js
 import { renderTranslator, manifest as translatorManifest } from './apps/translator.js';
 import { renderWeather, manifest as weatherManifest } from './apps/weather.js';
 import { renderDictionary, manifest as dictManifest } from './apps/dictionary.js';
-import { renderPlaceholder, aiManifest } from './apps/placeholder.js';
+import { renderAI, manifest as aiManifest } from './apps/ai.js';
 
 initTheme();
 initNav('#app');
@@ -33,16 +33,7 @@ const appConfigs = [
   { manifest: dictManifest, render: renderDictionary },
   { manifest: translatorManifest, render: renderTranslator },
   { manifest: settingsManifest, render: renderSettings },
-  {
-    manifest: aiManifest,
-    render: ({ root, router: r, params }) => renderPlaceholder({
-      root,
-      router: r,
-      title: 'AI Assistant',
-      subtitle: 'Phase 4 feature',
-      message: 'The AI module will be attached after the launcher, notes, translator, weather, and dictionary screens are locked in.'
-    })
-  }
+  { manifest: aiManifest, render: renderAI },
 ];
 
 // Register Home launcher route
