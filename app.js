@@ -65,14 +65,6 @@ initSoftKeys({
 
 router.open('home');
 
-// Global keyboard shortcuts
-window.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    e.preventDefault();
-    router.back();
-  }
-});
-
 // Online / Offline status indicator — updates the header pill in real time.
 // The clock overwrites this on the home screen; it restores when leaving home.
 function updateOnlineStatus() {

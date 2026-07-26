@@ -159,6 +159,26 @@ button { -webkit-tap-highlight-color: transparent; }
   padding: 16px;
 }
 
+.ck-panel.is-focused,
+.ck-display.is-focused,
+.ck-weather-hero.is-focused,
+.ck-weather-result.is-focused,
+.ck-dict-panel.is-focused {
+  background: var(--focus);
+  color: var(--focus-fg);
+  border-color: transparent;
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--focus) 40%, transparent), var(--shadow);
+}
+
+.ck-panel.is-focused .ck-panel__subtitle,
+.ck-display.is-focused .ck-display__label,
+.ck-weather-hero.is-focused .ck-weather-hero__location,
+.ck-weather-hero.is-focused .ck-weather-hero__cond,
+.ck-weather-result.is-focused .ck-weather-stat__label,
+.ck-weather-result.is-focused .ck-weather-stat__value {
+  color: var(--focus-fg);
+}
+
 .ck-display__label {
   font-size: 12px;
   color: var(--muted);
@@ -216,9 +236,7 @@ button { -webkit-tap-highlight-color: transparent; }
 }
 
 .ck-calc-display {
-  position: sticky;
-  top: 0;
-  z-index: 5;
+  position: relative;
 }
 
 .ck-calc-expression {

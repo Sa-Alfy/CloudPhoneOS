@@ -95,7 +95,7 @@ export function renderDictionary({ root, router }) {
       </div>
     </section>
 
-    <section class="ck-panel ck-dict-panel" id="ck-dict-result-area" aria-live="polite">
+    <section class="ck-panel ck-dict-panel" id="ck-dict-result-area" aria-live="polite" data-focusable>
       <div id="ck-dict-content"></div>
     </section>
   `;

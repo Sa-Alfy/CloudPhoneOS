@@ -1,6 +1,5 @@
 import { Toast } from '../core/components.js';
 import { setSoftKeys } from '../core/softkeys.js';
-import { setFocused } from '../core/nav.js';
 
 export const manifest = {
   id: 'translator',
@@ -205,24 +204,6 @@ export function renderTranslator({ root, router }) {
   const clearBtn = wrapper.querySelector('[data-action="clear"]');
   const backBtn = wrapper.querySelector('[data-action="back"]');
 
-  const focusOrder = [src, dst, input, translateBtn, swapBtn, clearBtn, backBtn].filter(
-    (element) => element instanceof HTMLElement
-  );
-
-  const moveFocus = (current, direction) => {
-    const index = focusOrder.indexOf(current);
-    if (index === -1) return;
-
-    const nextIndex = direction === 'down'
-      ? Math.min(focusOrder.length - 1, index + 1)
-      : Math.max(0, index - 1);
-
-    const next = focusOrder[nextIndex];
-    if (next && next !== current) {
-      setFocused(next);
-    }
-  };
-
   const doTranslate = async (silent = false) => {
     const text = input.value.trim();
     if (!text) {
@@ -280,13 +261,6 @@ export function renderTranslator({ root, router }) {
   });
   src.addEventListener('change', () => doTranslate(true));
   dst.addEventListener('change', () => doTranslate(true));
-  [src, dst].forEach((select) => {
-    select.addEventListener('keydown', (event) => {
-      if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
-      event.preventDefault();
-      moveFocus(select, event.key === 'ArrowDown' ? 'down' : 'up');
-    });
-  });
   input.addEventListener('keydown', (event) => {
     if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
       event.preventDefault();

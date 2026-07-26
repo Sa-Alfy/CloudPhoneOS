@@ -70,14 +70,14 @@ export function renderWeather({ root, router }) {
       <button type="button" class="ck-weather-search-btn" data-action="search" data-focusable>Search</button>
     </div>
 
-    <section class="ck-weather-hero" aria-live="polite">
+    <section class="ck-weather-hero" aria-live="polite" data-focusable>
       <div class="ck-weather-hero__icon" id="ck-weather-hero-icon">🌤️</div>
       <div class="ck-weather-hero__temp" id="ck-weather-hero-temp">—</div>
       <div class="ck-weather-hero__location" id="ck-weather-hero-loc">Ready</div>
       <div class="ck-weather-hero__cond" id="ck-weather-hero-cond">Type a city and search.</div>
     </section>
 
-    <section class="ck-panel ck-weather-result">
+    <section class="ck-panel ck-weather-result" data-focusable>
       <div class="ck-weather-grid" id="ck-weather-grid">
         <div class="ck-weather-stat">
           <div class="ck-weather-stat__label">Feels like</div>

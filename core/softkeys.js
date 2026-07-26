@@ -56,7 +56,7 @@ export function initSoftKeys({ onLeft, onCenter, onRight } = {}) {
 
   window.addEventListener('keydown', (event) => {
     // Left softkey — various KaiOS/W3C key names
-    if (event.key === 'SoftLeft' || event.key === 'F1') {
+    if (event.key === 'SoftLeft' || event.key === 'F1' || event.key === 'Escape') {
       event.preventDefault();
       safeCall('left', currentCallbacks.onLeft);
       return;
