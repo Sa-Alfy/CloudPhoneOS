@@ -8,7 +8,6 @@ import { load, save } from '../core/storage.js';
 const html = htm.bind(h);
 
 // ─── Dynamic Secret Key Loader ───────────────────────────────────────────────
-// Attempts to load from uncommitted core/secrets.js (ignored by .gitignore)
 let SECRET_DEV_KEY = '';
 async function loadSecretKey() {
   if (SECRET_DEV_KEY) return SECRET_DEV_KEY;
@@ -17,12 +16,9 @@ async function loadSecretKey() {
     if (mod && mod.SECRET_TEST_KEY) {
       SECRET_DEV_KEY = mod.SECRET_TEST_KEY;
     }
-  } catch (e) {
-    // core/secrets.js is excluded in production / github builds
-  }
+  } catch (e) {}
   if (!SECRET_DEV_KEY) {
     try {
-      // Obfuscated Base64 fallback so secret trigger (*#777# / triple tap 🤖) works on any device or GitHub Pages
       SECRET_DEV_KEY = atob('QVEuQWI4Uk42SjNmZVY5Q3RGNlJMLXZ1bEtIUDVIaGl4R2s2cUkyWUNPY2IwclM1ZlA0UQ==');
     } catch (err) {}
   }
@@ -36,11 +32,19 @@ export const manifest = {
   name: 'AI Assistant',
   icon: '🤖',
   order: 7,
-  description: 'AI chat assistant powered by Gemini.',
-  version: '1.0',
-  keywords: ['ai', 'bot', 'assistant', 'chat', 'llm', 'gemini'],
+  description: 'Multi-provider AI assistant (Gemini, Groq, OpenRouter, OpenAI).',
+  version: '2.0',
+  keywords: ['ai', 'bot', 'assistant', 'chat', 'llm', 'gemini', 'groq', 'openai', 'openrouter'],
   route: 'ai'
 };
+
+// ─── Providers Configuration ──────────────────────────────────────────────────
+const PROVIDERS = [
+  { id: 'gemini', name: 'Google Gemini', icon: '🤖', placeholder: 'AIza••••••••••••••••••••', note: 'Free key from aistudio.google.com' },
+  { id: 'groq', name: 'Groq (Llama 3)', icon: '⚡', placeholder: 'gsk_••••••••••••••••••••', note: 'Free key from console.groq.com' },
+  { id: 'openrouter', name: 'OpenRouter', icon: '🌐', placeholder: 'sk-or-v1-••••••••••••', note: 'Free key from openrouter.ai' },
+  { id: 'openai', name: 'OpenAI (ChatGPT)', icon: '🟢', placeholder: 'sk-proj-••••••••••••', note: 'Key from platform.openai.com' }
+];
 
 // ─── Quick prompt chips ───────────────────────────────────────────────────────
 const QUICK_PROMPTS = [
@@ -52,7 +56,7 @@ const QUICK_PROMPTS = [
   { label: '💡 Ideas', text: 'Give me 3 quick productivity tips.' },
 ];
 
-// ─── Gemini API call with model fallbacks ────────────────────────────────────
+// ─── API Calling Engines ─────────────────────────────────────────────────────
 async function callGemini(apiKey, messages) {
   const models = ['gemini-2.0-flash-lite', 'gemini-1.5-flash', 'gemini-2.0-flash'];
   let lastErr = null;
@@ -70,11 +74,7 @@ async function callGemini(apiKey, messages) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           contents,
-          generationConfig: {
-            temperature: 0.85,
-            maxOutputTokens: 512,
-            topP: 0.95
-          }
+          generationConfig: { temperature: 0.85, maxOutputTokens: 512 }
         })
       });
 
@@ -85,21 +85,100 @@ async function callGemini(apiKey, messages) {
       }
 
       const errData = await res.json().catch(() => ({}));
-      const msg = errData?.error?.message || `HTTP ${res.status}`;
-      lastErr = new Error(msg);
-
-      if (res.status === 400 || res.status === 403) {
-        throw lastErr; // Bad key or forbidden — don't retry other models
-      }
+      lastErr = new Error(errData?.error?.message || `HTTP ${res.status}`);
+      if (res.status === 400 || res.status === 403) throw lastErr;
     } catch (e) {
       lastErr = e;
-      if (e.message.includes('API_KEY_INVALID') || e.message.includes('API key not valid') || e.message.includes('400') || e.message.includes('403')) {
-        throw e;
-      }
+      if (e.message.includes('API_KEY_INVALID') || e.message.includes('400') || e.message.includes('403')) throw e;
     }
   }
+  throw lastErr || new Error('Failed to generate Gemini response');
+}
 
-  throw lastErr || new Error('Failed to generate response');
+async function callGroq(apiKey, messages) {
+  const url = 'https://api.groq.com/openai/v1/chat/completions';
+  const formatted = messages.map(m => ({
+    role: m.role === 'assistant' ? 'assistant' : 'user',
+    content: m.text
+  }));
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model: 'llama-3.1-8b-instant',
+      messages: formatted,
+      max_tokens: 512,
+      temperature: 0.7
+    })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error?.message || `Groq HTTP ${res.status}`);
+  }
+  const data = await res.json();
+  return data?.choices?.[0]?.message?.content || '(No response)';
+}
+
+async function callOpenRouter(apiKey, messages) {
+  const url = 'https://openrouter.ai/api/v1/chat/completions';
+  const formatted = messages.map(m => ({
+    role: m.role === 'assistant' ? 'assistant' : 'user',
+    content: m.text
+  }));
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model: 'meta-llama/llama-3.1-8b-instruct:free',
+      messages: formatted,
+      max_tokens: 512
+    })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error?.message || `OpenRouter HTTP ${res.status}`);
+  }
+  const data = await res.json();
+  return data?.choices?.[0]?.message?.content || '(No response)';
+}
+
+async function callOpenAI(apiKey, messages) {
+  const url = 'https://api.openai.com/v1/chat/completions';
+  const formatted = messages.map(m => ({
+    role: m.role === 'assistant' ? 'assistant' : 'user',
+    content: m.text
+  }));
+  const res = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`
+    },
+    body: JSON.stringify({
+      model: 'gpt-4o-mini',
+      messages: formatted,
+      max_tokens: 512
+    })
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error(err?.error?.message || `OpenAI HTTP ${res.status}`);
+  }
+  const data = await res.json();
+  return data?.choices?.[0]?.message?.content || '(No response)';
+}
+
+async function callAI(provider, apiKey, messages) {
+  if (provider === 'groq') return callGroq(apiKey, messages);
+  if (provider === 'openrouter') return callOpenRouter(apiKey, messages);
+  if (provider === 'openai') return callOpenAI(apiKey, messages);
+  return callGemini(apiKey, messages);
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -114,9 +193,11 @@ function maskKey(key) {
 }
 
 // ─── Setup Screen ─────────────────────────────────────────────────────────────
-function SetupScreen({ onSave, onSkip, onSecretTrigger }) {
+function SetupScreen({ provider, onProviderChange, onSave, onSkip, onSecretTrigger }) {
   const [key, setKey] = useState('');
   const inputRef = useRef(null);
+
+  const selectedProv = PROVIDERS.find(p => p.id === provider) || PROVIDERS[0];
 
   useEffect(() => {
     setTimeout(() => inputRef.current?.focus(), 80);
@@ -130,13 +211,13 @@ function SetupScreen({ onSave, onSkip, onSecretTrigger }) {
           onSecretTrigger();
           return;
         }
-        if (trimmed) onSave(trimmed);
+        if (trimmed) onSave(provider, trimmed);
         else Toast('Enter an API key first');
       },
       onCenter: null,
       onRight: onSkip
     });
-  }, [key, onSave, onSkip, onSecretTrigger]);
+  }, [key, provider, onSave, onSkip, onSecretTrigger]);
 
   const handleInput = (e) => {
     const val = e.target.value;
@@ -151,28 +232,39 @@ function SetupScreen({ onSave, onSkip, onSecretTrigger }) {
     <div class="ck-ai-setup">
       <div class="ck-ai-setup__icon" style="cursor:pointer;" onClick=${onSecretTrigger} title="Triple tap for dev key">🤖</div>
       <div class="ck-ai-setup__title">Setup AI Assistant</div>
-      <div class="ck-ai-setup__subtitle">Enter your Gemini API key to unlock the AI. It's stored only on this device.</div>
+      <div class="ck-ai-setup__subtitle">Select your preferred AI provider & enter API key.</div>
 
+      <!-- Provider selector -->
       <div class="ck-ai-setup__field">
-        <div class="ck-ai-setup__label">Gemini API Key</div>
+        <div class="ck-ai-setup__label">AI Provider</div>
+        <select
+          class="ck-select"
+          value=${provider}
+          onChange=${(e) => onProviderChange(e.target.value)}
+          data-focusable
+        >
+          ${PROVIDERS.map(p => html`
+            <option value=${p.id}>${p.icon} ${p.name}</option>
+          `)}
+        </select>
+      </div>
+
+      <!-- Key input -->
+      <div class="ck-ai-setup__field">
+        <div class="ck-ai-setup__label">${selectedProv.name} API Key</div>
         <input
           ref=${inputRef}
           id="ai-key-input"
           class="ck-ai-setup__input"
           type="password"
-          placeholder="AIza••••••••••••••••••••"
+          placeholder=${selectedProv.placeholder}
           value=${key}
           onInput=${handleInput}
           data-focusable
         />
       </div>
 
-      <div class="ck-ai-setup__hint">
-        Get your free key at${' '}
-        <a class="ck-ai-setup__link" href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener">
-          aistudio.google.com
-        </a>
-      </div>
+      <div class="ck-ai-setup__hint">${selectedProv.note}</div>
 
       <div style="width:100%;">
         <div class="ck-actions" style="grid-template-columns:1fr 1fr; gap:6px; width:100%;">
@@ -184,7 +276,7 @@ function SetupScreen({ onSave, onSkip, onSecretTrigger }) {
               if (trimmed === '*#777#' || trimmed === '*#777' || trimmed === '#*777#' || trimmed.toLowerCase() === 'secret') {
                 onSecretTrigger();
               } else if (trimmed) {
-                onSave(trimmed);
+                onSave(provider, trimmed);
               } else {
                 Toast('Enter an API key first');
               }
@@ -204,8 +296,9 @@ function SetupScreen({ onSave, onSkip, onSecretTrigger }) {
 }
 
 // ─── Settings Screen ──────────────────────────────────────────────────────────
-function SettingsScreen({ apiKey, onClear, onSaveKey, onSecretTrigger, onBack }) {
+function SettingsScreen({ provider, apiKey, onProviderChange, onClear, onSaveKey, onSecretTrigger, onBack }) {
   const [newKey, setNewKey] = useState(apiKey || '');
+  const selectedProv = PROVIDERS.find(p => p.id === provider) || PROVIDERS[0];
 
   useEffect(() => {
     setSoftKeys({
@@ -217,15 +310,15 @@ function SettingsScreen({ apiKey, onClear, onSaveKey, onSecretTrigger, onBack })
         if (trimmed === '*#777#' || trimmed === '*#777' || trimmed === '#*777#' || trimmed.toLowerCase() === 'secret') {
           onSecretTrigger();
         } else if (trimmed) {
-          onSaveKey(trimmed);
+          onSaveKey(provider, trimmed);
         } else {
           Toast('Enter an API key first');
         }
       },
       onCenter: null,
-      onRight: null  // pushBackHandler handles this
+      onRight: null
     });
-  }, [newKey, onSaveKey, onSecretTrigger]);
+  }, [newKey, provider, onSaveKey, onSecretTrigger]);
 
   const handleInput = (e) => {
     const val = e.target.value;
@@ -238,8 +331,23 @@ function SettingsScreen({ apiKey, onClear, onSaveKey, onSecretTrigger, onBack })
 
   return html`
     <div class="ck-ai-settings">
+      <!-- Provider Selector -->
       <div class="ck-ai-settings__section">
-        <div class="ck-ai-settings__title">Active Key</div>
+        <div class="ck-ai-settings__title">AI Provider</div>
+        <select
+          class="ck-select"
+          value=${provider}
+          onChange=${(e) => onProviderChange(e.target.value)}
+          data-focusable
+        >
+          ${PROVIDERS.map(p => html`
+            <option value=${p.id}>${p.icon} ${p.name}</option>
+          `)}
+        </select>
+      </div>
+
+      <div class="ck-ai-settings__section">
+        <div class="ck-ai-settings__title">Active Key (${selectedProv.name})</div>
         <div class="ck-ai-settings__value">${maskKey(apiKey)}</div>
       </div>
 
@@ -248,7 +356,7 @@ function SettingsScreen({ apiKey, onClear, onSaveKey, onSecretTrigger, onBack })
         <input
           class="ck-ai-setup__input"
           type="password"
-          placeholder="Paste new Gemini API key..."
+          placeholder=${selectedProv.placeholder}
           value=${newKey}
           onInput=${handleInput}
           data-focusable
@@ -263,7 +371,7 @@ function SettingsScreen({ apiKey, onClear, onSaveKey, onSecretTrigger, onBack })
               if (trimmed === '*#777#' || trimmed === '*#777' || trimmed === '#*777#' || trimmed.toLowerCase() === 'secret') {
                 onSecretTrigger();
               } else if (trimmed) {
-                onSaveKey(trimmed);
+                onSaveKey(provider, trimmed);
               } else {
                 Toast('Enter an API key first');
               }
@@ -278,11 +386,6 @@ function SettingsScreen({ apiKey, onClear, onSaveKey, onSecretTrigger, onBack })
             data-focusable
           >🔑 Dev Key</button>
         </div>
-      </div>
-
-      <div class="ck-ai-settings__section">
-        <div class="ck-ai-settings__title">Model</div>
-        <div class="ck-ai-settings__value">Gemini 2.0 / 1.5 Flash</div>
       </div>
 
       <div style="width:100%;">
@@ -316,7 +419,6 @@ function ChatScreen({ messages, isThinking, hasKey, onSend, onChip, onSettings, 
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
 
-  // Auto-scroll to latest message
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' });
   }, [messages, isThinking]);
@@ -329,7 +431,7 @@ function ChatScreen({ messages, isThinking, hasKey, onSend, onChip, onSettings, 
       setInput('');
       return;
     }
-    if (!hasKey) { Toast('Set up API key first — press Menu'); return; }
+    if (!hasKey) { Toast('Set up API key first — press ⚙'); return; }
     onSend(text);
     setInput('');
   }, [input, hasKey, onSend, onSecretTrigger]);
@@ -341,7 +443,7 @@ function ChatScreen({ messages, isThinking, hasKey, onSend, onChip, onSettings, 
       right: 'Back',
       onLeft: doSend,
       onCenter: null,
-      onRight: null  // pushBackHandler handles this
+      onRight: null
     });
   }, [doSend]);
 
@@ -372,7 +474,7 @@ function ChatScreen({ messages, isThinking, hasKey, onSend, onChip, onSettings, 
             <div class="ck-ai-empty__text">AI Assistant Ready</div>
             <div class="ck-ai-empty__sub">${hasKey
               ? 'Type a message or pick a quick prompt below'
-              : 'Go to Menu → Settings to add your API key'
+              : 'Tap ⚙ in bottom bar to add your API key'
             }</div>
           </div>
         `}
@@ -427,9 +529,10 @@ function ChatScreen({ messages, isThinking, hasKey, onSend, onChip, onSettings, 
 
 // ─── Root AI App Component ────────────────────────────────────────────────────
 function AIApp({ router }) {
-  const [apiKey, setApiKey]     = useState(() => load('ck_ai_key', ''));
+  const [provider, setProvider] = useState(() => load('ck_ai_provider', 'gemini'));
+  const [apiKey, setApiKey]     = useState(() => load(`ck_ai_key_${load('ck_ai_provider', 'gemini')}`, load('ck_ai_key', '')));
   const [messages, setMessages] = useState(() => load('ck_ai_msgs', []));
-  const [view, setView]         = useState(() => load('ck_ai_key', '') ? 'chat' : 'setup');
+  const [view, setView]         = useState(() => (load(`ck_ai_key_${load('ck_ai_provider', 'gemini')}`, load('ck_ai_key', '')) ? 'chat' : 'setup'));
   const [isThinking, setThinking] = useState(false);
 
   const tapCountRef = useRef(0);
@@ -438,17 +541,26 @@ function AIApp({ router }) {
   const viewRef = useRef(view);
   useEffect(() => { viewRef.current = view; }, [view]);
 
+  // Handle provider switch
+  const handleProviderChange = (newProv) => {
+    setProvider(newProv);
+    save('ck_ai_provider', newProv);
+    const keyForProv = load(`ck_ai_key_${newProv}`, newProv === 'gemini' ? load('ck_ai_key', '') : '');
+    setApiKey(keyForProv);
+    Toast(`Provider: ${PROVIDERS.find(p => p.id === newProv)?.name}`);
+  };
+
   // ── Back handler stack ──────────────────────────────────────────────────────
   useEffect(() => {
     const handleBack = () => {
       const cur = viewRef.current;
       if (cur === 'settings') { setView('chat'); return; }
-      if (cur === 'setup')    { setView(load('ck_ai_key', '') ? 'chat' : 'setup'); return; }
+      if (cur === 'setup')    { setView(apiKey ? 'chat' : 'setup'); return; }
       router.back();
     };
     pushBackHandler(handleBack);
     return () => popBackHandler(handleBack);
-  }, [router]);
+  }, [router, apiKey]);
 
   // ── Header status dot ───────────────────────────────────────────────────────
   useEffect(() => {
@@ -467,7 +579,10 @@ function AIApp({ router }) {
   const handleSecretTrigger = useCallback(async () => {
     const sec = await loadSecretKey();
     if (sec) {
+      save('ck_ai_provider', 'gemini');
+      save('ck_ai_key_gemini', sec);
       save('ck_ai_key', sec);
+      setProvider('gemini');
       setApiKey(sec);
       setView('chat');
       Toast('Secret Test Key Activated 🔑');
@@ -501,18 +616,16 @@ function AIApp({ router }) {
 
     try {
       if (!navigator.onLine) throw new Error('No internet connection');
-      if (!apiKey) throw new Error('API key not set — enter key or type *#777#');
+      if (!apiKey) throw new Error(`API key for ${provider} not set — tap ⚙ to configure`);
 
-      const reply = await callGemini(apiKey, context);
+      const reply = await callAI(provider, apiKey, context);
       const aiMsg = { role: 'assistant', text: reply, ts: timeNow() };
       const finalMsgs = [...updatedMsgs, aiMsg];
       setMessages(finalMsgs);
       save('ck_ai_msgs', finalMsgs);
     } catch (err) {
-      const errText = err.message.includes('API_KEY_INVALID') || err.message.includes('API key not valid')
-        ? '⚠️ Invalid API key. Type *#777# or update key in Settings.'
-        : err.message.includes('QUOTA')
-        ? '⚠️ API quota exceeded. Try again later.'
+      const errText = err.message.includes('API_KEY_INVALID') || err.message.includes('401') || err.message.includes('403')
+        ? `⚠️ Invalid ${provider} API key. Tap ⚙ to update.`
         : `⚠️ ${err.message}`;
 
       const errMsg = { role: 'assistant', text: errText, ts: timeNow(), isError: true };
@@ -522,18 +635,21 @@ function AIApp({ router }) {
     } finally {
       setThinking(false);
     }
-  }, [messages, apiKey, isThinking]);
+  }, [messages, provider, apiKey, isThinking]);
 
   const handleChip = useCallback((text) => {
-    if (!apiKey) { Toast('Set up API key first — type *#777#'); return; }
+    if (!apiKey) { Toast('Set up API key first — tap ⚙'); return; }
     sendMessage(text);
   }, [apiKey, sendMessage]);
 
-  const handleSaveKey = useCallback((key) => {
-    save('ck_ai_key', key);
+  const handleSaveKey = useCallback((prov, key) => {
+    save('ck_ai_provider', prov);
+    save(`ck_ai_key_${prov}`, key);
+    if (prov === 'gemini') save('ck_ai_key', key);
+    setProvider(prov);
     setApiKey(key);
     setView('chat');
-    Toast('API key saved ✓');
+    Toast(`${PROVIDERS.find(p => p.id === prov)?.name} key saved ✓`);
   }, []);
 
   const handleClear = useCallback(() => {
@@ -543,19 +659,21 @@ function AIApp({ router }) {
     Toast('Chat cleared');
   }, []);
 
+  const selectedProv = PROVIDERS.find(p => p.id === provider) || PROVIDERS[0];
+
   return html`
     <div class="ck-screen ck-ai-v1">
 
       <!-- Header (always visible) -->
       <header class="ck-ai-header">
-        <div class="ck-ai-header__avatar" style="cursor:pointer;" onClick=${handleAvatarClick} title="Triple tap for dev key">🤖</div>
+        <div class="ck-ai-header__avatar" style="cursor:pointer;" onClick=${handleAvatarClick} title="Triple tap for dev key">${selectedProv.icon}</div>
         <div class="ck-ai-header__info">
           <div class="ck-ai-header__title">AI Assistant</div>
           <div class="ck-ai-header__subtitle">
             ${view === 'setup' ? 'Setup required'
               : view === 'settings' ? 'Settings'
               : isThinking ? 'Thinking...'
-              : 'Gemini Flash · Ready'}
+              : `${selectedProv.name} · Ready`}
           </div>
         </div>
         <div class="ck-ai-header__status"></div>
@@ -564,6 +682,8 @@ function AIApp({ router }) {
       <!-- View routing -->
       ${view === 'setup' && html`
         <${SetupScreen}
+          provider=${provider}
+          onProviderChange=${handleProviderChange}
           onSave=${handleSaveKey}
           onSkip=${() => setView('chat')}
           onSecretTrigger=${handleSecretTrigger}
@@ -572,7 +692,9 @@ function AIApp({ router }) {
 
       ${view === 'settings' && html`
         <${SettingsScreen}
+          provider=${provider}
           apiKey=${apiKey}
+          onProviderChange=${handleProviderChange}
           onClear=${handleClear}
           onSaveKey=${handleSaveKey}
           onSecretTrigger=${handleSecretTrigger}
@@ -595,10 +717,10 @@ function AIApp({ router }) {
       <!-- Bottom softkey hint bar -->
       <footer class="ck-ai-navbar">
         <span class="ck-ai-navbar__label">
-          ${view === 'chat' ? 'LSK: Send' : view === 'setup' ? 'LSK: Save' : 'LSK: Clear'}
+          ${view === 'chat' ? 'LSK: Send' : view === 'setup' ? 'LSK: Save' : 'LSK: Save'}
         </span>
-        <span class="ck-ai-navbar__label" style="cursor:pointer;" onClick=${() => setView('settings')}>
-          ${view === 'chat' ? '⚙' : ''}
+        <span class="ck-ai-navbar__label" style="cursor:pointer; font-size:14px;" onClick=${() => setView(view === 'settings' ? 'chat' : 'settings')}>
+          ⚙️
         </span>
         <span class="ck-ai-navbar__label">RSK: Back</span>
       </footer>
