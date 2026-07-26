@@ -1,5 +1,6 @@
 import { Toast } from '../core/components.js';
 import { setSoftKeys } from '../core/softkeys.js';
+import { setFocused } from '../core/nav.js';
 
 export const manifest = {
   id: 'translator',
@@ -142,7 +143,7 @@ function translateText(text, from, to) {
   return translateByWords(clean, wordMap);
 }
 
-export function renderTranslator({ root }) {
+export function renderTranslator({ root, router }) {
   const wrapper = document.createElement('div');
   wrapper.className = 'ck-screen ck-translator';
   wrapper.innerHTML = `
@@ -154,7 +155,7 @@ export function renderTranslator({ root }) {
     <section class="ck-panel ck-form">
       <div class="ck-field">
         <label class="ck-label" for="ck-src">From</label>
-        <select id="ck-src" class="ck-select">
+        <select id="ck-src" class="ck-select" data-focusable>
           <option value="auto">Auto detect</option>
           <option value="en">English</option>
           <option value="bn">Bangla</option>
@@ -163,7 +164,7 @@ export function renderTranslator({ root }) {
 
       <div class="ck-field">
         <label class="ck-label" for="ck-dst">To</label>
-        <select id="ck-dst" class="ck-select">
+        <select id="ck-dst" class="ck-select" data-focusable>
           <option value="bn">Bangla</option>
           <option value="en">English</option>
         </select>
@@ -171,7 +172,7 @@ export function renderTranslator({ root }) {
 
       <div class="ck-field">
         <label class="ck-label" for="ck-input">Text</label>
-        <textarea id="ck-input" class="ck-textarea ck-textarea--short" rows="5" placeholder="Type or paste text here"></textarea>
+        <textarea id="ck-input" class="ck-textarea ck-textarea--short" rows="5" placeholder="Type or paste text here" data-focusable></textarea>
       </div>
 
       <div class="ck-field">
@@ -203,6 +204,24 @@ export function renderTranslator({ root }) {
   const swapBtn = wrapper.querySelector('[data-action="swap"]');
   const clearBtn = wrapper.querySelector('[data-action="clear"]');
   const backBtn = wrapper.querySelector('[data-action="back"]');
+
+  const focusOrder = [src, dst, input, translateBtn, swapBtn, clearBtn, backBtn].filter(
+    (element) => element instanceof HTMLElement
+  );
+
+  const moveFocus = (current, direction) => {
+    const index = focusOrder.indexOf(current);
+    if (index === -1) return;
+
+    const nextIndex = direction === 'down'
+      ? Math.min(focusOrder.length - 1, index + 1)
+      : Math.max(0, index - 1);
+
+    const next = focusOrder[nextIndex];
+    if (next && next !== current) {
+      setFocused(next);
+    }
+  };
 
   const doTranslate = async (silent = false) => {
     const text = input.value.trim();
@@ -261,6 +280,13 @@ export function renderTranslator({ root }) {
   });
   src.addEventListener('change', () => doTranslate(true));
   dst.addEventListener('change', () => doTranslate(true));
+  [src, dst].forEach((select) => {
+    select.addEventListener('keydown', (event) => {
+      if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+      event.preventDefault();
+      moveFocus(select, event.key === 'ArrowDown' ? 'down' : 'up');
+    });
+  });
   input.addEventListener('keydown', (event) => {
     if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
       event.preventDefault();

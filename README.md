@@ -14,8 +14,8 @@
    ├───────────────────────────────────────────────┤
    │                                               │
    │   🤖 AI Assistant        [Soon]               │
-   │   🌐 Translator          [Bangla ⇄ English]   │
-   │  👉🧮 Calculator          [Working]            │
+   │   🌐 Translator          [Bangla ⇄ English]  │
+   │  👉🧮 Calculator          [Working]          │
    │   ⛅ Weather             [Open-Meteo API]     │
    │   📝 Notes               [Local Persistence]  │
    │   ⚙️ Settings            [Theme Toggle]       │
@@ -34,7 +34,7 @@
 - ⚡ **Strict Single-Activation**: Robust click-event unification ensuring zero duplicate triggers between keypad `Enter` and mouse clicks.
 - 💾 **State & Focus Preservation**: Back navigation (`router.back()`) restores the exact page state, scroll offset, and item focus.
 - 🎹 **Context-Aware Softkeys**: An adaptive status bar (LSK/CSK/RSK) that changes its actions and labels based on the active application.
-- 🛠️ **Built-in Dev Controls**: Floating hardware-simulator overlay for quick mobile testing on PC screens.
+- 🛠️ **Built-in Dev Controls**: Floating hardware-simulator overlay for quick testing, enabled with `?dev=1` or the `ck:dev-controls` localStorage flag.
 
 ---
 
@@ -88,7 +88,7 @@ Visit `http://localhost:8080/` to launch the CloudKit Shell.
 
 | Key | Action |
 |-----|--------|
-| **Arrow Up / Down / Left / Right** | D-pad navigation between focusable items |
+| **Arrow Up / Down / Left / Right** | D-pad navigation between focusable items; in editable fields, arrows can also move between neighboring form controls |
 | **Enter** | Center Softkey (CSK) / Trigger action |
 | **F1 / Escape** | Left Softkey (LSK) |
 | **F2 / Backspace** | Right Softkey (RSK) / Back |
@@ -96,7 +96,11 @@ Visit `http://localhost:8080/` to launch the CloudKit Shell.
 ---
 
 ## 🛠️ Developer Testing Mode
-A simulation control pad floats on the bottom-right corner when testing on PC. Use it to simulate hardware keys, test focus order, and debug screen flows under a device constraint.
+A simulation control pad can be enabled on desktop by adding `?dev=1` to the URL or setting `localStorage.setItem('ck:dev-controls', '1')` in the browser console. Use it to simulate hardware keys, test focus order, and debug screen flows under a device constraint.
+
+## ✍️ Form Navigation
+
+Text inputs, textareas, and select boxes are part of the D-pad focus order in apps that use them, including Weather, Dictionary, Translator, Notes, and the launcher search box. Use the arrow keys or D-pad to move into a field, type normally once focused, and move on to the next control when you reach a field edge.
 
 ---
 

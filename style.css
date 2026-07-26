@@ -384,7 +384,7 @@ button { -webkit-tap-highlight-color: transparent; }
   right: 12px;
   bottom: 62px;
   z-index: 70;
-  display: grid;
+  display: none;
   gap: 8px;
   padding: 10px;
   border: 1px solid var(--border);
@@ -393,6 +393,10 @@ button { -webkit-tap-highlight-color: transparent; }
   box-shadow: var(--shadow);
   transform: scale(.95);
   transform-origin: bottom right;
+}
+
+:root[data-dev-controls] .dev-controls {
+  display: grid;
 }
 
 .dev-controls__grid {
@@ -528,8 +532,6 @@ button { -webkit-tap-highlight-color: transparent; }
   /* Inputs */
   .ck-input, .ck-select { min-height: 40px; }
 
-  /* Hide dev controls on tiny real screens — they're only useful on desktop */
-  .dev-controls { display: none; }
 }
 
 /* ── Ultra-small (240px — classic feature phone) ───────────────────────── */

@@ -86,7 +86,7 @@ export function renderDictionary({ root, router }) {
     <section class="ck-panel ck-form">
       <div class="ck-field ck-field--inline">
         <label class="ck-label" for="ck-dict-word">Word</label>
-        <input id="ck-dict-word" class="ck-input" type="text" placeholder="e.g. serendipity"
+        <input id="ck-dict-word" class="ck-input" type="text" placeholder="e.g. serendipity" data-focusable
                autocomplete="off" spellcheck="false" autocorrect="off" autocapitalize="off">
       </div>
       <div class="ck-actions ck-actions--stacked">

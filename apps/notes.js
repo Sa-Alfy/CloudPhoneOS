@@ -21,7 +21,7 @@ export function renderNotes({ root, router }) {
   wrapper.innerHTML = `
     <div class="ck-panel">
       <div class="ck-panel__title">Notes</div>
-      <textarea id="notes-input" class="ck-textarea" rows="8" placeholder="Write a note..."></textarea>
+      <textarea id="notes-input" class="ck-textarea" rows="8" placeholder="Write a note..." data-focusable></textarea>
     </div>
   `;
 

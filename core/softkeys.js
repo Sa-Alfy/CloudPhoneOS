@@ -1,14 +1,14 @@
 import { activateFocused } from './nav.js';
 
 let currentCallbacks = { onLeft: null, onCenter: null, onRight: null };
-let lastSoftKeyTime = 0;
+let lastSoftKeyTimeByAction = { left: 0, center: 0, right: 0 };
 const DEBOUNCE_MS = 300;
 
-function safeCall(fn) {
+function safeCall(action, fn) {
   if (typeof fn !== 'function') return;
   const now = Date.now();
-  if (now - lastSoftKeyTime < DEBOUNCE_MS) return;
-  lastSoftKeyTime = now;
+  if (now - (lastSoftKeyTimeByAction[action] || 0) < DEBOUNCE_MS) return;
+  lastSoftKeyTimeByAction[action] = now;
   fn();
 }
 
@@ -34,13 +34,13 @@ export function initSoftKeys({ onLeft, onCenter, onRight } = {}) {
 
   if (lskBtn) lskBtn.addEventListener('click', (e) => {
     e.preventDefault();
-    safeCall(currentCallbacks.onLeft);
+    safeCall('left', currentCallbacks.onLeft);
   });
 
   // Center button activates the focused element directly.
   if (cskBtn) cskBtn.addEventListener('click', (e) => {
     e.preventDefault();
-    safeCall(() => {
+    safeCall('center', () => {
       if (currentCallbacks.onCenter) {
         currentCallbacks.onCenter();
       } else {
@@ -51,14 +51,14 @@ export function initSoftKeys({ onLeft, onCenter, onRight } = {}) {
 
   if (rskBtn) rskBtn.addEventListener('click', (e) => {
     e.preventDefault();
-    safeCall(currentCallbacks.onRight);
+    safeCall('right', currentCallbacks.onRight);
   });
 
   window.addEventListener('keydown', (event) => {
     // Left softkey — various KaiOS/W3C key names
     if (event.key === 'SoftLeft' || event.key === 'F1') {
       event.preventDefault();
-      safeCall(currentCallbacks.onLeft);
+      safeCall('left', currentCallbacks.onLeft);
       return;
     }
 
@@ -75,11 +75,11 @@ export function initSoftKeys({ onLeft, onCenter, onRight } = {}) {
       if (event.key === 'Backspace' && (tag === 'INPUT' || tag === 'TEXTAREA')) return;
 
       event.preventDefault();
-      safeCall(currentCallbacks.onRight);
+      safeCall('right', currentCallbacks.onRight);
     }
   });
 
-  window.addEventListener('ck:left',   () => safeCall(currentCallbacks.onLeft));
-  window.addEventListener('ck:center', () => safeCall(() => activateFocused()));
-  window.addEventListener('ck:back',   () => safeCall(currentCallbacks.onRight));
+  window.addEventListener('ck:left',   () => safeCall('left', currentCallbacks.onLeft));
+  window.addEventListener('ck:center', () => safeCall('center', () => activateFocused()));
+  window.addEventListener('ck:back',   () => safeCall('right', currentCallbacks.onRight));
 }

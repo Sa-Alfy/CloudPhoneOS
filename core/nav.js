@@ -27,6 +27,40 @@ function centerOf(element) {
 // 16px gives a small visual gap so the item isn't flush against the header.
 const SCROLL_MARGIN_TOP = 16;
 
+function canUseNativeFocus(target) {
+  if (!(target instanceof HTMLElement)) return false;
+  const tag = target.tagName;
+  return target.isContentEditable || tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT';
+}
+
+function shouldExitEditable(target, key) {
+  if (!(target instanceof HTMLElement)) return false;
+  const tag = target.tagName;
+  if (tag !== 'INPUT' && tag !== 'TEXTAREA') return false;
+
+  const value = target.value || '';
+  const selectionStart = typeof target.selectionStart === 'number' ? target.selectionStart : null;
+  const selectionEnd = typeof target.selectionEnd === 'number' ? target.selectionEnd : null;
+  const collapsed = selectionStart !== null && selectionEnd !== null && selectionStart === selectionEnd;
+
+  if (!collapsed || selectionStart === null) return false;
+
+  if (key === 'ArrowLeft') return selectionStart === 0;
+  if (key === 'ArrowRight') return selectionEnd === value.length;
+
+  if (key === 'ArrowUp') {
+    const lineStart = value.lastIndexOf('\n', Math.max(0, selectionStart - 1));
+    return lineStart === -1;
+  }
+
+  if (key === 'ArrowDown') {
+    const nextLineBreak = value.indexOf('\n', selectionStart);
+    return nextLineBreak === -1;
+  }
+
+  return false;
+}
+
 export function setFocused(element) {
   const focusableItems = focusables();
   if (!focusableItems.length) return;
@@ -34,6 +68,14 @@ export function setFocused(element) {
   const target = element && focusableItems.includes(element) ? element : focusableItems[0];
   focusableItems.forEach((node) => node.classList.remove('is-focused'));
   target.classList.add('is-focused');
+
+  if (canUseNativeFocus(target)) {
+    try {
+      target.focus({ preventScroll: true });
+    } catch {
+      target.focus();
+    }
+  }
 
   // KaiOS-style scroll: anchor the focused item near the TOP of the scroll
   // container so the user always sees items below it. When the first item is
@@ -180,6 +222,17 @@ export function initNav(selector = '#app') {
       if (!container) return;
       if (!focusables().length) return;
       if (isEditable(document.activeElement)) {
+        if (shouldExitEditable(document.activeElement, event.key)) {
+          event.preventDefault();
+          const direction =
+            event.key === 'ArrowUp' ? 'up' :
+            event.key === 'ArrowDown' ? 'down' :
+            event.key === 'ArrowLeft' ? 'left' :
+            'right';
+          const next = pickNext(direction);
+          document.activeElement.blur();
+          setFocused(next);
+        }
         return;
       }
 

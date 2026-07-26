@@ -16,6 +16,9 @@ import { renderPlaceholder, aiManifest } from './apps/placeholder.js';
 initTheme();
 initNav('#app');
 
+const devControlsEnabled = new URLSearchParams(window.location.search).has('dev') || localStorage.getItem('ck:dev-controls') === '1';
+document.documentElement.toggleAttribute('data-dev-controls', devControlsEnabled);
+
 const router = new Router({
   root: '#app',
   subtitle: '#ck-subtitle',

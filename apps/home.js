@@ -90,7 +90,7 @@ function renderSearchScreen({ root, router, onBack }) {
   root.innerHTML = `
     <div class="ck-screen ck-search-screen">
       <div class="ck-search-bar-container">
-        <input type="text" id="ck-search-input" class="ck-search-input" placeholder="🔍 Search apps..." autocomplete="off" autofocus />
+        <input type="text" id="ck-search-input" class="ck-search-input" placeholder="🔍 Search apps..." autocomplete="off" autofocus data-focusable />
       </div>
       <div id="ck-search-results" class="ck-list"></div>
     </div>
