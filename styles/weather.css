@@ -1,0 +1,294 @@
+/* ── Weather v2 — Button-Phone Style (240x320 QVGA Optimized) ────────────────────────────────────── */
+
+.ck-app:has(.ck-weather-v2) {
+  padding: 0 !important;
+  overflow: hidden !important;
+}
+
+.ck-weather-v2 {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-height: 0;
+}
+
+.ck-wx-bg {
+  position: relative;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  color: #fff;
+  transition: background 0.6s ease;
+}
+
+.wx-clear-day {
+  background: linear-gradient(170deg, #1565c0 0%, #42a5f5 60%, #90caf9 100%);
+}
+.wx-clear-night {
+  background: radial-gradient(ellipse at 30% 20%, #1a2a4a 0%, #080c18 80%);
+}
+.wx-clear-night::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image:
+    radial-gradient(1px 1px at 12% 22%, rgba(255,255,255,.8) 0%, transparent 100%),
+    radial-gradient(1px 1px at 34% 14%, rgba(255,255,255,.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 58% 28%, rgba(255,255,255,.7) 0%, transparent 100%),
+    radial-gradient(1px 1px at 78% 10%, rgba(255,255,255,.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 48% 42%, rgba(255,255,255,.6) 0%, transparent 100%),
+    radial-gradient(1px 1px at 22% 52%, rgba(255,255,255,.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 68% 38%, rgba(255,255,255,.7) 0%, transparent 100%),
+    radial-gradient(1px 1px at 88% 48%, rgba(255,255,255,.4) 0%, transparent 100%),
+    radial-gradient(1.5px 1.5px at 8% 68%, rgba(255,255,255,.6) 0%, transparent 100%),
+    radial-gradient(1px 1px at 43% 62%, rgba(255,255,255,.3) 0%, transparent 100%);
+}
+.wx-partly-day {
+  background: linear-gradient(170deg, #1976d2 0%, #4db6e8 55%, #7ec8f0 100%);
+}
+.wx-partly-night {
+  background: linear-gradient(170deg, #0d1f3c 0%, #152d55 45%, #1e3a66 100%);
+}
+.wx-partly-night::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 220px 90px at 65% 28%, rgba(255,255,255,.06) 0%, transparent 100%),
+    radial-gradient(ellipse 160px 65px at 25% 48%, rgba(255,255,255,.04) 0%, transparent 100%),
+    radial-gradient(1px 1px at 18% 18%, rgba(255,255,255,.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 53% 12%, rgba(255,255,255,.4) 0%, transparent 100%),
+    radial-gradient(1px 1px at 82% 32%, rgba(255,255,255,.5) 0%, transparent 100%),
+    radial-gradient(1px 1px at 40% 55%, rgba(255,255,255,.3) 0%, transparent 100%);
+}
+.wx-overcast {
+  background: linear-gradient(170deg, #2c3345 0%, #3d4a5c 55%, #4a5568 100%);
+}
+.wx-fog {
+  background: linear-gradient(170deg, #5a6272 0%, #6b7280 55%, #7c8593 100%);
+}
+.wx-rain {
+  background: linear-gradient(170deg, #101c2e 0%, #1a2c42 55%, #213450 100%);
+}
+.wx-rain::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: repeating-linear-gradient(
+    -75deg,
+    transparent,
+    transparent 14px,
+    rgba(160, 210, 255, 0.06) 14px,
+    rgba(160, 210, 255, 0.06) 15px
+  );
+}
+.wx-snow {
+  background: linear-gradient(170deg, #3a4a5c 0%, #4a5a6c 55%, #5a6a7c 100%);
+}
+.wx-storm {
+  background: linear-gradient(170deg, #0c0d1a 0%, #18112a 55%, #200f35 100%);
+}
+
+.ck-wx-search-panel {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  gap: 6px;
+  padding: 8px;
+  flex-shrink: 0;
+}
+
+.ck-wx-search-input {
+  flex: 1;
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,.22);
+  background: rgba(255,255,255,.12);
+  color: #fff;
+  font-size: 13px;
+  outline: none;
+}
+.ck-wx-search-input::placeholder { color: rgba(255,255,255,.5); }
+.ck-wx-search-input:focus { border-color: rgba(255,255,255,.8); background: rgba(255,255,255,.2); }
+
+.ck-wx-search-btn {
+  padding: 6px 10px;
+  border-radius: 8px;
+  border: 1px solid rgba(255,255,255,.2);
+  background: rgba(255,255,255,.2);
+  color: #fff;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.ck-wx-hero {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px 4px;
+  flex-shrink: 0;
+}
+
+.ck-wx-hero__left {
+  display: flex;
+  flex-direction: column;
+}
+
+.ck-wx-hero__city {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  line-height: 1.1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+
+.ck-wx-hero__temp {
+  font-size: 28px;
+  font-weight: 300;
+  color: #fff;
+  line-height: 1;
+  letter-spacing: -0.5px;
+  margin-top: 2px;
+}
+
+.ck-wx-hero__cond {
+  font-size: 11px;
+  color: rgba(255,255,255,.85);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 140px;
+}
+
+.ck-wx-hero__icon {
+  font-size: 32px;
+  line-height: 1;
+  flex-shrink: 0;
+  filter: drop-shadow(0 2px 8px rgba(0,0,0,.4));
+}
+
+.ck-wx-hourly {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding: 4px 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.ck-wx-loading {
+  color: rgba(255,255,255,.65);
+  font-size: 12px;
+  text-align: center;
+  padding: 16px 0;
+}
+
+.ck-wx-hour {
+  display: grid;
+  grid-template-columns: 40px 20px 1fr 34px;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 6px;
+  border-radius: 6px;
+  background: rgba(255,255,255,.12);
+  color: rgba(255,255,255,.9);
+  transition: background .12s ease, color .12s ease;
+  flex-shrink: 0;
+  font-size: 11px;
+}
+
+.ck-wx-hour--active {
+  background: #ffffff;
+  color: #000;
+  font-weight: 600;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+}
+
+.ck-wx-hour__time {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.1;
+}
+
+.ck-wx-hour__date {
+  font-size: 9px;
+  opacity: .75;
+}
+
+.ck-wx-hour__label {
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.ck-wx-hour__icon { font-size: 14px; text-align: center; }
+
+.ck-wx-hour__precip {
+  font-size: 10px;
+  text-align: center;
+  color: rgba(255,255,255,.75);
+}
+
+.ck-wx-hour--active .ck-wx-hour__precip { color: #0277bd; font-weight: 700; }
+
+.ck-wx-hour__temp {
+  font-size: 12px;
+  font-weight: 700;
+  text-align: right;
+}
+
+.ck-wx-navbar {
+  position: relative;
+  z-index: 2;
+  display: grid;
+  grid-template-columns: 36px 1fr 36px;
+  align-items: center;
+  padding: 3px 8px 4px;
+  background: rgba(0,0,0,.4);
+  backdrop-filter: blur(4px);
+  flex-shrink: 0;
+}
+
+.ck-wx-navbar__btn {
+  border: none;
+  background: none;
+  color: rgba(255,255,255,.9);
+  font-size: 15px;
+  cursor: pointer;
+  padding: 2px;
+  line-height: 1;
+}
+
+.ck-wx-navbar__dots {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 5px;
+}
+
+.ck-wx-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: rgba(255,255,255,.4);
+  transition: background .2s ease;
+}
+
+.ck-wx-dot--active { background: #fff; }

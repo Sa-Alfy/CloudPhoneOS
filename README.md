@@ -58,8 +58,15 @@ CloudKit/
 │   ├── storage.js        # LocalStorage persistence wrapper
 │   └── theme.js          # Dark/Light theme toggles
 │
+├── styles/               # CSS Styles & Modules
+│   ├── main.css          # Entrypoint imports
+│   ├── base.css          # Root variables and core elements
+│   ├── calculator.css    # Calculator app overrides
+│   ├── dictionary.css    # Dictionary app overrides
+│   ├── launcher.css      # Home launcher screen styles
+│   └── weather.css       # Weather app styling
+│
 ├── index.html            # OS entrypoint and layout template
-├── style.css             # Main styling, themes, and layout tokens
 └── app.js                # App bootstrap & event wiring
 ```
 

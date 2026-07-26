@@ -219,10 +219,17 @@ export function renderWeather({ root, router }) {
         <span class="ck-wx-hour__precip">${item.precip}%</span>
         <span class="ck-wx-hour__temp">${Math.round(item.temp)}°</span>
       `;
+      row.addEventListener('click', () => {
+        focusedIdx = i;
+        paintHourly();
+      });
       hourlyEl.appendChild(row);
     });
     // Scroll focused into view
-    hourlyEl.querySelector('.ck-wx-hour--active')?.scrollIntoView({ block: 'nearest' });
+    const activeEl = hourlyEl.querySelector('.ck-wx-hour--active');
+    if (activeEl) {
+      activeEl.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
   }
 
   // ── Render current + hourly data ──────────────────────────────────────────
