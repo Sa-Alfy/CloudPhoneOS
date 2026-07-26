@@ -152,6 +152,48 @@ button { -webkit-tap-highlight-color: transparent; }
 .ck-panel__subtitle { margin-top: 4px; color: var(--muted); font-size: 13px; }
 .ck-panel__text { margin: 12px 0 0; line-height: 1.5; color: var(--fg); }
 
+.ck-about-screen {
+  display: grid;
+  gap: 12px;
+}
+
+.ck-about-card {
+  display: grid;
+  gap: 8px;
+}
+
+.ck-about-grid {
+  display: grid;
+  gap: 6px;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--fg);
+}
+
+.ck-about-link-row {
+  display: grid;
+  gap: 4px;
+}
+
+.ck-about-link-label {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+  color: var(--muted);
+}
+
+.ck-about-link {
+  color: var(--focus);
+  font-weight: 700;
+  word-break: break-word;
+  text-decoration: none;
+}
+
+.ck-about-link:focus,
+.ck-about-link:hover {
+  text-decoration: underline;
+}
+
 .ck-display {
   border: 1px solid var(--border);
   border-radius: 18px;

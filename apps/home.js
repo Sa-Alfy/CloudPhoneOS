@@ -24,13 +24,18 @@ function showAboutDialog() {
   const themeLabel = currentTheme.charAt(0).toUpperCase() + currentTheme.slice(1);
 
   Dialog({
-    title: 'CloudKit OS',
+    title: 'About CloudKit',
     message: `
       <div style="font-size: 13px; line-height: 1.5; text-align: left;">
-        <div><strong>Version:</strong> 2.0 (Beta)</div>
+        <div><strong>Product:</strong> CloudKit OS</div>
+        <div><strong>Version:</strong> 2.0 Beta</div>
+        <div><strong>Build:</strong> Lightweight Web UI Shell</div>
         <div><strong>Installed Apps:</strong> ${allApps.length}</div>
         <div><strong>Theme:</strong> ${themeLabel}</div>
-        <div style="margin-top: 6px; color: var(--muted);">Feature-phone micro-OS shell.</div>
+        <div><strong>Interface:</strong> Keypad-first / Feature phone style</div>
+        <div style="margin-top: 8px;"><strong>Developed by:</strong> Shariar Ahamed</div>
+        <div><strong>GitHub:</strong> <a href="https://github.com/Sa-Alfy" target="_blank" rel="noopener noreferrer">https://github.com/Sa-Alfy</a></div>
+        <div style="margin-top: 6px; color: var(--muted);">A compact micro-OS experience designed for simple, fast, and touch-friendly navigation.</div>
       </div>
     `,
     confirmLabel: 'OK',
@@ -38,6 +43,46 @@ function showAboutDialog() {
     onConfirm: null,
     onCancel: null
   });
+}
+
+function renderAboutScreen({ root, router }) {
+  const allApps = appRegistry.getAll();
+  const currentTheme = getTheme();
+  const themeLabel = currentTheme.charAt(0).toUpperCase() + currentTheme.slice(1);
+
+  root.innerHTML = `
+    <div class="ck-screen ck-about-screen">
+      <section class="ck-panel ck-about-card" data-focusable>
+        <div class="ck-panel__title">About CloudKit</div>
+        <div class="ck-panel__subtitle">CloudKit OS information</div>
+        <div class="ck-about-grid">
+          <div><strong>Product:</strong> CloudKit OS</div>
+          <div><strong>Version:</strong> 2.0 Beta</div>
+          <div><strong>Build:</strong> Lightweight Web UI Shell</div>
+          <div><strong>Installed Apps:</strong> ${allApps.length}</div>
+          <div><strong>Theme:</strong> ${themeLabel}</div>
+          <div><strong>Interface:</strong> Keypad-first / Feature phone style</div>
+        </div>
+        <p class="ck-panel__text">A compact micro-OS experience designed for simple, fast, and touch-friendly navigation.</p>
+      </section>
+
+      <section class="ck-panel ck-about-card" data-focusable>
+        <div class="ck-panel__title">Developer</div>
+        <div class="ck-panel__subtitle">Created by Shariar Ahamed</div>
+        <div class="ck-about-link-row">
+          <div class="ck-about-link-label">GitHub</div>
+          <a class="ck-about-link" href="https://github.com/Sa-Alfy" target="_blank" rel="noopener noreferrer">github.com/Sa-Alfy</a>
+        </div>
+      </section>
+
+      <div class="ck-actions ck-actions--stacked">
+        <button type="button" class="ck-action" data-focusable data-action="back">Back</button>
+      </div>
+    </div>
+  `;
+
+  root.querySelector('[data-action="back"]')?.addEventListener('click', () => router.back());
+  window.dispatchEvent(new CustomEvent('ck:rendered', { detail: { focusIndex: 0 } }));
 }
 
 function showLauncherMenu({ router, onOpenSearch }) {
@@ -286,3 +331,5 @@ export function renderHome({ root, router }) {
 
   renderMainLauncher();
 }
+
+export { renderAboutScreen };

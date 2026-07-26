@@ -4,7 +4,7 @@ import { initTheme } from './core/theme.js';
 import { Router } from './core/router.js';
 import { appRegistry } from './core/app-registry.js';
 import { Toast, Dialog } from './core/components.js';
-import { renderHome } from './apps/home.js';
+import { renderHome, renderAboutScreen } from './apps/home.js';
 import { renderCalculator, manifest as calcManifest } from './apps/calculator.js';
 import { renderNotes, manifest as notesManifest } from './apps/notes.js';
 import { renderSettings, manifest as settingsManifest } from './apps/settings.js';
@@ -47,6 +47,7 @@ const appConfigs = [
 
 // Register Home launcher route
 router.register('home', renderHome, { label: 'Launcher' });
+router.register('about', renderAboutScreen, { label: 'About CloudKit' });
 
 // Explicitly register apps in AppRegistry and Router
 appConfigs.forEach(({ manifest, render }) => {

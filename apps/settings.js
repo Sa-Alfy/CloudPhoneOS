@@ -38,8 +38,8 @@ export function renderSettings({ root, router }) {
     },
     {
       label: 'About CloudKit',
-      meta: 'Phase 4',
-      onSelect: () => Toast('CloudKit OS')
+      meta: 'Developed by Shariar Ahamed',
+      onSelect: () => router.open('about')
     },
     {
       label: 'Back',

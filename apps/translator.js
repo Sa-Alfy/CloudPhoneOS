@@ -1,5 +1,10 @@
+import { h, render } from 'https://esm.sh/preact';
+import { useState, useEffect, useRef } from 'https://esm.sh/preact/hooks';
+import htm from 'https://esm.sh/htm';
 import { Toast } from '../core/components.js';
 import { setSoftKeys } from '../core/softkeys.js';
+
+const html = htm.bind(h);
 
 export const manifest = {
   id: 'translator',
@@ -11,8 +16,6 @@ export const manifest = {
   keywords: ['language', 'translate', 'bengali', 'english', 'convert'],
   route: 'translator'
 };
-
-
 
 const PAIRS = {
   'hello': 'হ্যালো',
@@ -44,7 +47,7 @@ const PAIRS = {
   'good': 'ভালো',
   'bad': 'খারাপ',
   'food': 'খাবার',
-  'water': 'পানি',
+  'water': 'पानी',
   'phone': 'ফোন',
   'message': 'বার্তা',
   'friend': 'বন্ধু',
@@ -130,193 +133,268 @@ function translateText(text, from, to) {
   const actualFrom = from === 'auto' ? detectLanguage(clean) : from;
   if (actualFrom === to) return clean;
 
-  const exactMap = actualFrom === 'en' ? PAIRS : Object.fromEntries(Object.entries(PAIRS).map(([en, bn]) => [bn, en]));
-  const lower = clean.toLowerCase();
-  const phraseKey = lower.replace(/[!?.,]+$/g, '');
+  if (
+    (actualFrom === 'en' && to === 'bn') ||
+    (actualFrom === 'bn' && to === 'en')
+  ) {
+    const exactMap = actualFrom === 'en' ? PAIRS : Object.fromEntries(Object.entries(PAIRS).map(([en, bn]) => [bn, en]));
+    const lower = clean.toLowerCase();
+    const phraseKey = lower.replace(/[!?.,]+$/g, '');
 
-  if (exactMap[lower]) return exactMap[lower];
-  if (exactMap[phraseKey]) return exactMap[phraseKey];
-  if (exactMap[clean]) return exactMap[clean];
+    if (exactMap[lower]) return exactMap[lower];
+    if (exactMap[phraseKey]) return exactMap[phraseKey];
+    if (exactMap[clean]) return exactMap[clean];
 
-  const wordMap = actualFrom === 'en' ? WORDS_EN_BN : WORDS_BN_EN;
-  return translateByWords(clean, wordMap);
+    const wordMap = actualFrom === 'en' ? WORDS_EN_BN : WORDS_BN_EN;
+    return translateByWords(clean, wordMap);
+  }
+
+  return clean;
 }
 
-export function renderTranslator({ root, router }) {
-  const wrapper = document.createElement('div');
-  wrapper.className = 'ck-screen ck-translator';
-  wrapper.innerHTML = `
-    <section class="ck-panel ck-translator__header">
-      <div class="ck-panel__title">Translator</div>
-      <div class="ck-panel__subtitle">Offline phrase translator for quick Bangla ⇄ English work</div>
-    </section>
+const LANGUAGES = [
+  { code: 'en', name: 'English (US/UK)', flag: '🇺🇸' },
+  { code: 'bn', name: 'Bangla (Bangladesh)', flag: '🇧🇩' },
+  { code: 'es', name: 'Spanish (Spain/LatAm)', flag: '🇪🇸' },
+  { code: 'fr', name: 'French (France)', flag: '🇫🇷' },
+  { code: 'de', name: 'German (Germany)', flag: '🇩🇪' },
+  { code: 'ar', name: 'Arabic (Middle East)', flag: '🇸🇦' },
+  { code: 'hi', name: 'Hindi (India)', flag: '🇮🇳' },
+  { code: 'zh', name: 'Chinese (Mandarin)', flag: '🇨🇳' },
+  { code: 'ja', name: 'Japanese (Japan)', flag: '🇯🇵' },
+  { code: 'ur', name: 'Urdu (Pakistan)', flag: '🇵🇰' },
+  { code: 'pt', name: 'Portuguese (Brazil)', flag: '🇧🇷' },
+  { code: 'ru', name: 'Russian (Russia)', flag: '🇷🇺' }
+];
 
-    <section class="ck-panel ck-form">
-      <div class="ck-field">
-        <label class="ck-label" for="ck-src">From</label>
-        <select id="ck-src" class="ck-select" data-focusable>
-          <option value="auto">Auto detect</option>
-          <option value="en">English</option>
-          <option value="bn">Bangla</option>
-        </select>
-      </div>
+const QUICK_PHRASES = [
+  { text: 'hello', label: 'Hello', src: 'en', dst: 'bn' },
+  { text: 'thank you', label: 'Thank you', src: 'en', dst: 'bn' },
+  { text: 'how are you', label: 'How are you?', src: 'en', dst: 'bn' },
+  { text: 'আমি ভালো আছি', label: 'আমি ভালো আছি', src: 'bn', dst: 'en' },
+  { text: 'Hola', label: 'Hola', src: 'es', dst: 'en' },
+  { text: 'Bonjour', label: 'Bonjour', src: 'fr', dst: 'en' }
+];
 
-      <div class="ck-field">
-        <label class="ck-label" for="ck-dst">To</label>
-        <select id="ck-dst" class="ck-select" data-focusable>
-          <option value="bn">Bangla</option>
-          <option value="en">English</option>
-        </select>
-      </div>
+function TranslatorApp({ router }) {
+  const [srcLang, setSrcLang] = useState('auto');
+  const [dstLang, setDstLang] = useState('bn');
+  const [inputText, setInputText] = useState('How are you?');
+  const [outputText, setOutputText] = useState('');
+  const [translating, setTranslating] = useState(false);
 
-      <div class="ck-field">
-        <label class="ck-label" for="ck-input">Text</label>
-        <textarea id="ck-input" class="ck-textarea ck-textarea--short" rows="5" placeholder="Type or paste text here" data-focusable></textarea>
-      </div>
-
-      <div class="ck-field">
-        <label class="ck-label" for="ck-output">Translation</label>
-        <textarea id="ck-output" class="ck-textarea ck-textarea--short" rows="5" readonly placeholder="Translation appears here" data-focusable></textarea>
-      </div>
-
-      <div class="ck-chip-row" aria-label="Quick phrases">
-        <button type="button" class="ck-chip" data-phrase="hello">Hello</button>
-        <button type="button" class="ck-chip" data-phrase="thank you">Thank you</button>
-        <button type="button" class="ck-chip" data-phrase="how are you">How are you?</button>
-        <button type="button" class="ck-chip" data-phrase="আমি ভালো আছি">আমি ভালো আছি</button>
-      </div>
-
-      <div class="ck-actions ck-actions--stacked">
-        <button type="button" class="ck-action" data-focusable data-action="translate">Translate</button>
-        <button type="button" class="ck-action" data-focusable data-action="swap">Swap</button>
-        <button type="button" class="ck-action" data-focusable data-action="clear">Clear</button>
-        <button type="button" class="ck-action" data-focusable data-action="back">Back</button>
-      </div>
-    </section>
-  `;
-
-  const src = wrapper.querySelector('#ck-src');
-  const dst = wrapper.querySelector('#ck-dst');
-  const input = wrapper.querySelector('#ck-input');
-  const output = wrapper.querySelector('#ck-output');
-  const translateBtn = wrapper.querySelector('[data-action="translate"]');
-  const swapBtn = wrapper.querySelector('[data-action="swap"]');
-  const clearBtn = wrapper.querySelector('[data-action="clear"]');
-  const backBtn = wrapper.querySelector('[data-action="back"]');
-
-  const doTranslate = async (silent = false) => {
-    const text = input.value.trim();
+  const handleTranslate = async (silent = false) => {
+    const text = inputText.trim();
     if (!text) {
-      output.value = '';
+      setOutputText('');
       return;
     }
-
+    setTranslating(true);
     try {
-      const from = src.value;
-      const to = dst.value;
+      const from = srcLang;
+      const to = dstLang;
       const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=${from}&tl=${to}&dt=t&q=${encodeURIComponent(text)}`;
       const res = await fetch(url);
       if (!res.ok) throw new Error('API failed');
       const data = await res.json();
       if (data && data[0]) {
-        output.value = data[0].map(part => part[0]).join('');
-        output.focus({ preventScroll: true });
+        const resultText = data[0].map(part => part[0]).join('');
+        setOutputText(resultText);
         if (!silent) Toast('Translated');
+        setTranslating(false);
         return;
       }
     } catch (e) {
       console.warn('Online translation failed, falling back to offline:', e);
     }
 
-    const translated = translateText(text, src.value, dst.value);
-    output.value = translated;
-    output.focus({ preventScroll: true });
+    const translated = translateText(text, srcLang, dstLang);
+    setOutputText(translated);
     if (!silent) Toast('Translated (Offline)');
+    setTranslating(false);
   };
 
-  const doSwap = () => {
-    if (src.value === 'auto') {
-      src.value = 'bn';
+  const handleSwap = () => {
+    let currentSrc = srcLang;
+    if (currentSrc === 'auto') {
+      currentSrc = inputText.trim() ? detectLanguage(inputText.trim()) : 'en';
     }
-    const previousSrc = src.value;
-    src.value = dst.value;
-    dst.value = previousSrc === 'en' ? 'bn' : 'en';
-    const sourceText = input.value;
-    input.value = output.value || sourceText;
-    output.value = '';
-    doTranslate(true);
+    const nextSrc = dstLang;
+    const nextDst = currentSrc;
+    setSrcLang(nextSrc);
+    setDstLang(nextDst);
+    setInputText(outputText || inputText);
+    setOutputText('');
     Toast('Swapped');
   };
 
-  const clearAll = () => {
-    input.value = '';
-    output.value = '';
-    src.value = 'auto';
-    dst.value = 'bn';
+  const handleClear = () => {
+    setInputText('');
+    setOutputText('');
+    setSrcLang('auto');
+    setDstLang('bn');
     Toast('Cleared');
   };
 
-  let debounceTimeout;
-  input.addEventListener('input', () => {
-    clearTimeout(debounceTimeout);
-    debounceTimeout = setTimeout(() => doTranslate(true), 400);
-  });
-  src.addEventListener('change', () => doTranslate(true));
-  dst.addEventListener('change', () => doTranslate(true));
-  input.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter' && (event.ctrlKey || event.metaKey)) {
-      event.preventDefault();
-      doTranslate(false);
-    }
-  });
+  const handlePhrase = (phrase) => {
+    setInputText(phrase.text);
+    setSrcLang(phrase.src);
+    setDstLang(phrase.dst);
+    Toast('Phrase loaded');
+  };
 
+  // Run initial translation on mount
+  useEffect(() => {
+    handleTranslate(true);
+  }, []);
 
-  setSoftKeys({
-    left: 'Translate',
-    center: 'Select',
-    right: 'Back',
-    onLeft: () => doTranslate(false),
-    onCenter: null,
-    onRight: () => router.back()
-  });
-
-  [translateBtn, swapBtn, clearBtn, backBtn].forEach((button) => {
-    button.addEventListener('click', () => {
-      switch (button.dataset.action) {
-        case 'translate':
-          doTranslate(false);
-          break;
-        case 'swap':
-          doSwap();
-          break;
-        case 'clear':
-          clearAll();
-          break;
-        case 'back':
-          router.back();
-          break;
-      }
+  // Set softkey listeners when state changes
+  useEffect(() => {
+    setSoftKeys({
+      left: 'Translate',
+      center: 'Select',
+      right: 'Back',
+      onLeft: () => handleTranslate(false),
+      onCenter: null,
+      onRight: () => router.back()
     });
-  });
+  }, [inputText, srcLang, dstLang, outputText]);
 
-  wrapper.querySelectorAll('[data-phrase]').forEach((button) => {
-    button.addEventListener('click', () => {
-      const phrase = button.dataset.phrase || '';
-      input.value = phrase;
-      if (/[\u0980-\u09FF]/.test(phrase)) {
-        src.value = 'bn';
-        dst.value = 'en';
-      } else {
-        src.value = 'en';
-        dst.value = 'bn';
-      }
-      doTranslate(false);
-      Toast('Phrase loaded');
-    });
-  });
+  // Debounced translation as user types
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      handleTranslate(true);
+    }, 450);
+    return () => clearTimeout(handler);
+  }, [inputText, srcLang, dstLang]);
 
-  root.appendChild(wrapper);
-  input.value = 'How are you?';
-  doTranslate(true);
+  return html`
+    <div class="ck-screen ck-translator-v2">
+      <header class="ck-tr-header">
+        <div class="ck-tr-header__title">Translator 🌐</div>
+        <div class="ck-tr-header__subtitle">
+          ${translating ? 'Translating...' : 'Multi-country translation engine'}
+        </div>
+      </header>
+
+      <main class="ck-tr-content">
+        <div class="ck-tr-field">
+          <label class="ck-tr-field__label" for="ck-src">From</label>
+          <select
+            id="ck-src"
+            class="ck-select"
+            value=${srcLang}
+            onChange=${(e) => setSrcLang(e.target.value)}
+            data-focusable
+          >
+            <option value="auto">Auto detect</option>
+            ${LANGUAGES.map(
+              (l) => html`<option value=${l.code}>${l.flag} ${l.name}</option>`
+            )}
+          </select>
+        </div>
+
+        <div class="ck-tr-field">
+          <label class="ck-tr-field__label" for="ck-dst">To</label>
+          <select
+            id="ck-dst"
+            class="ck-select"
+            value=${dstLang}
+            onChange=${(e) => setDstLang(e.target.value)}
+            data-focusable
+          >
+            ${LANGUAGES.map(
+              (l) => html`<option value=${l.code}>${l.flag} ${l.name}</option>`
+            )}
+          </select>
+        </div>
+
+        <div class="ck-tr-field">
+          <label class="ck-tr-field__label" for="ck-input">Text</label>
+          <textarea
+            id="ck-input"
+            class="ck-textarea"
+            placeholder="Type or paste text here"
+            value=${inputText}
+            onInput=${(e) => setInputText(e.target.value)}
+            data-focusable
+          />
+        </div>
+
+        <div class="ck-tr-field">
+          <label class="ck-tr-field__label" for="ck-output">Translation</label>
+          <textarea
+            id="ck-output"
+            class="ck-textarea"
+            readonly
+            placeholder="Translation appears here"
+            value=${outputText}
+            data-focusable
+          />
+        </div>
+
+        <div class="ck-tr-field">
+          <label class="ck-tr-field__label">Quick phrases</label>
+          <div class="ck-tr-chips" aria-label="Quick phrases">
+            ${QUICK_PHRASES.map(
+              (p) => html`
+                <button
+                  type="button"
+                  class="ck-chip"
+                  onClick=${() => handlePhrase(p)}
+                  data-focusable
+                >
+                  ${p.label}
+                </button>
+              `
+            )}
+          </div>
+        </div>
+
+        <div class="ck-tr-actions">
+          <button
+            type="button"
+            class="ck-action"
+            onClick=${() => handleTranslate(false)}
+            data-focusable
+          >
+            Translate
+          </button>
+          <button
+            type="button"
+            class="ck-action"
+            onClick=${handleSwap}
+            data-focusable
+          >
+            Swap
+          </button>
+          <button
+            type="button"
+            class="ck-action"
+            onClick=${handleClear}
+            data-focusable
+          >
+            Clear
+          </button>
+          <button
+            type="button"
+            class="ck-action"
+            onClick=${() => router.back()}
+            data-focusable
+          >
+            Back
+          </button>
+        </div>
+      </main>
+
+      <footer class="ck-tr-navbar">
+        <span class="ck-tr-navbar__label">LSK: Translate</span>
+        <span class="ck-tr-navbar__label">RSK: Back</span>
+      </footer>
+    </div>
+  `;
 }
 
+export function renderTranslator({ root, router }) {
+  render(html`<${TranslatorApp} router=${router} />`, root);
+}
