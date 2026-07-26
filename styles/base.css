@@ -81,9 +81,11 @@ button { -webkit-tap-highlight-color: transparent; }
   flex: 1;
   min-height: 0;
   padding: 12px 16px 80px;
-  overflow-y: scroll;
+  overflow-y: auto;
   -webkit-overflow-scrolling: touch;
   overscroll-behavior: contain;
+  container-type: inline-size;
+  container-name: app-container;
 }
 
 @keyframes ck-fadein {
@@ -457,63 +459,52 @@ button { -webkit-tap-highlight-color: transparent; }
 }
 
 @media (max-width: 380px) {
-  .ck-title { font-size: 22px; }
-  .ck-item__label { font-size: 16px; }
+  .ck-title { font-size: clamp(16px, 5vw, 22px); }
+  .ck-item__label { font-size: 15px; }
   .dev-controls { transform: scale(.86); right: 6px; bottom: 58px; }
 }
 
-.ck-state {
-  display: grid;
-  gap: 10px;
-  justify-items: center;
-  text-align: center;
-  padding: 24px 16px;
-}
-
-.ck-state__icon {
-  font-size: 32px;
-  line-height: 1;
-}
-
-.ck-state__message {
-  font-size: 14px;
-  color: var(--muted);
-  line-height: 1.5;
-}
-
-.ck-state__retry {
-  margin-top: 6px;
+@media (max-height: 340px) {
+  .ck-header { padding: 6px 10px 4px; }
+  .ck-title  { font-size: 16px; }
+  .ck-subtitle { font-size: 10px; }
+  .ck-softkeys { padding: 4px 6px 6px; }
+  .ck-softkeys button { min-height: 30px; font-size: 11px; }
 }
 
 @media (max-width: 320px) {
-  .ck-title    { font-size: 18px; }
+  .ck-title    { font-size: clamp(14px, 5vw, 18px); }
   .ck-subtitle { font-size: 11px; }
   .ck-status   { font-size: 10px; padding: 4px 8px; }
-  .ck-header   { padding: 10px 12px 8px; }
+  .ck-header   { padding: 8px 10px 6px; }
 
-  .ck-app  { padding: 8px 10px 80px; }
+  .ck-app  { padding: 6px 8px 70px; }
 
-  .ck-item         { padding: 10px 12px; border-radius: 12px; }
-  .ck-item__label  { font-size: 14px; }
-  .ck-item__meta   { font-size: 11px; }
+  .ck-item         { padding: 8px 10px; border-radius: 10px; }
+  .ck-item__label  { font-size: 13px; }
+  .ck-item__meta   { font-size: 10px; }
 
-  .ck-panel  { padding: 12px; border-radius: 12px; }
-  .ck-panel__title { font-size: 16px; }
+  .ck-panel  { padding: 10px; border-radius: 10px; }
+  .ck-panel__title { font-size: 14px; }
 
-  .ck-softkeys { padding: 8px 8px 12px; gap: 6px; }
-  .ck-softkeys button { min-height: 34px; font-size: 12px; }
+  .ck-softkeys { padding: 6px 6px 8px; gap: 4px; }
+  .ck-softkeys button { min-height: 32px; font-size: 11px; }
 
-  .ck-weather-grid { grid-template-columns: 1fr 1fr; gap: 6px; }
-  .ck-weather-stat { padding: 10px; border-radius: 10px; }
-  .ck-weather-stat__value { font-size: 15px; margin-top: 4px; }
-  .ck-weather-stat__label { font-size: 10px; }
+  .ck-weather-grid { grid-template-columns: 1fr 1fr; gap: 5px; }
+  .ck-weather-stat { padding: 8px; border-radius: 8px; }
+  .ck-weather-stat__value { font-size: 14px; margin-top: 2px; }
+  .ck-weather-stat__label { font-size: 9px; }
 
-  .ck-key, .ck-action { min-height: 42px; font-size: 13px; }
+  .ck-key, .ck-action { min-height: 38px; font-size: 12px; }
 
-  .ck-input, .ck-select { min-height: 40px; }
+  .ck-input, .ck-select { min-height: 36px; font-size: 12px; }
 }
 
-@media (max-width: 240px) {
+@media (max-width: 240px), (max-height: 260px) {
+  .ck-header { padding: 4px 6px 3px; }
+  .ck-subtitle { display: none; }
+  .ck-status { display: none; }
   .ck-weather-grid { grid-template-columns: 1fr; }
   .ck-grid { grid-template-columns: repeat(3, 1fr); }
+  .ck-app { padding: 4px 4px 50px; }
 }
