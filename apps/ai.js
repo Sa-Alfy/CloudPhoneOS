@@ -1,4 +1,4 @@
-import { h, render } from 'https://esm.sh/preact';
+import { h, render, Fragment } from 'https://esm.sh/preact';
 import { useState, useEffect, useRef, useCallback } from 'https://esm.sh/preact/hooks';
 import htm from 'https://esm.sh/htm';
 import { Toast } from '../core/components.js';
@@ -6,6 +6,23 @@ import { setSoftKeys, pushBackHandler, popBackHandler } from '../core/softkeys.j
 import { load, save } from '../core/storage.js';
 
 const html = htm.bind(h);
+
+// ─── Dynamic Secret Key Loader ───────────────────────────────────────────────
+// Attempts to load from uncommitted core/secrets.js (ignored by .gitignore)
+let SECRET_DEV_KEY = '';
+async function loadSecretKey() {
+  if (SECRET_DEV_KEY) return SECRET_DEV_KEY;
+  try {
+    const mod = await import('../core/secrets.js');
+    if (mod && mod.SECRET_TEST_KEY) {
+      SECRET_DEV_KEY = mod.SECRET_TEST_KEY;
+    }
+  } catch (e) {
+    // core/secrets.js is excluded in production / github builds
+  }
+  return SECRET_DEV_KEY;
+}
+loadSecretKey(); // Pre-load async
 
 // ─── Manifest ────────────────────────────────────────────────────────────────
 export const manifest = {
@@ -29,42 +46,54 @@ const QUICK_PROMPTS = [
   { label: '💡 Ideas', text: 'Give me 3 quick productivity tips.' },
 ];
 
-// ─── Gemini API call ──────────────────────────────────────────────────────────
+// ─── Gemini API call with model fallbacks ────────────────────────────────────
 async function callGemini(apiKey, messages) {
-  const model = 'gemini-2.0-flash-lite';
-  const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+  const models = ['gemini-2.0-flash-lite', 'gemini-1.5-flash', 'gemini-2.0-flash'];
+  let lastErr = null;
 
-  // Build conversation history in Gemini format
   const contents = messages.map(m => ({
     role: m.role === 'assistant' ? 'model' : 'user',
     parts: [{ text: m.text }]
   }));
 
-  const res = await fetch(url, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents,
-      generationConfig: {
-        temperature: 0.85,
-        maxOutputTokens: 512,
-        topP: 0.95
-      },
-      safetySettings: [
-        { category: 'HARM_CATEGORY_HARASSMENT', threshold: 'BLOCK_MEDIUM_AND_ABOVE' },
-        { category: 'HARM_CATEGORY_HATE_SPEECH', threshold: 'BLOCK_MEDIUM_AND_ABOVE' }
-      ]
-    })
-  });
+  for (const model of models) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const res = await fetch(url, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents,
+          generationConfig: {
+            temperature: 0.85,
+            maxOutputTokens: 512,
+            topP: 0.95
+          }
+        })
+      });
 
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    const msg = err?.error?.message || `API error ${res.status}`;
-    throw new Error(msg);
+      if (res.ok) {
+        const data = await res.json();
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) return text;
+      }
+
+      const errData = await res.json().catch(() => ({}));
+      const msg = errData?.error?.message || `HTTP ${res.status}`;
+      lastErr = new Error(msg);
+
+      if (res.status === 400 || res.status === 403) {
+        throw lastErr; // Bad key or forbidden — don't retry other models
+      }
+    } catch (e) {
+      lastErr = e;
+      if (e.message.includes('API_KEY_INVALID') || e.message.includes('API key not valid') || e.message.includes('400') || e.message.includes('403')) {
+        throw e;
+      }
+    }
   }
 
-  const data = await res.json();
-  return data?.candidates?.[0]?.content?.parts?.[0]?.text || '(No response)';
+  throw lastErr || new Error('Failed to generate response');
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -79,7 +108,7 @@ function maskKey(key) {
 }
 
 // ─── Setup Screen ─────────────────────────────────────────────────────────────
-function SetupScreen({ onSave, onSkip }) {
+function SetupScreen({ onSave, onSkip, onSecretTrigger }) {
   const [key, setKey] = useState('');
   const inputRef = useRef(null);
 
@@ -89,15 +118,32 @@ function SetupScreen({ onSave, onSkip }) {
       left: 'Save',
       center: 'Select',
       right: 'Skip',
-      onLeft: () => { if (key.trim()) onSave(key.trim()); else Toast('Enter an API key first'); },
+      onLeft: () => {
+        const trimmed = key.trim();
+        if (trimmed === '*#777#' || trimmed === '*#777' || trimmed === '#*777#' || trimmed.toLowerCase() === 'secret') {
+          onSecretTrigger();
+          return;
+        }
+        if (trimmed) onSave(trimmed);
+        else Toast('Enter an API key first');
+      },
       onCenter: null,
       onRight: onSkip
     });
-  }, [key]);
+  }, [key, onSave, onSkip, onSecretTrigger]);
+
+  const handleInput = (e) => {
+    const val = e.target.value;
+    setKey(val);
+    const trimmed = val.trim();
+    if (trimmed === '*#777#' || trimmed === '*#777' || trimmed === '#*777#' || trimmed.toLowerCase() === 'secret') {
+      onSecretTrigger();
+    }
+  };
 
   return html`
     <div class="ck-ai-setup">
-      <div class="ck-ai-setup__icon">🤖</div>
+      <div class="ck-ai-setup__icon" style="cursor:pointer;" onClick=${onSecretTrigger} title="Triple tap for dev key">🤖</div>
       <div class="ck-ai-setup__title">Setup AI Assistant</div>
       <div class="ck-ai-setup__subtitle">Enter your Gemini API key to unlock the AI. It's stored only on this device.</div>
 
@@ -110,7 +156,7 @@ function SetupScreen({ onSave, onSkip }) {
           type="password"
           placeholder="AIza••••••••••••••••••••"
           value=${key}
-          onInput=${e => setKey(e.target.value)}
+          onInput=${handleInput}
           data-focusable
         />
       </div>
@@ -122,12 +168,21 @@ function SetupScreen({ onSave, onSkip }) {
         </a>
       </div>
 
-      <div class="ck-ai-v1" style="width:100%;">
+      <div style="width:100%;">
         <div class="ck-actions" style="grid-template-columns:1fr 1fr; gap:6px; width:100%;">
           <button
             type="button"
             class="ck-action"
-            onClick=${() => { if (key.trim()) onSave(key.trim()); else Toast('Enter an API key first'); }}
+            onClick=${() => {
+              const trimmed = key.trim();
+              if (trimmed === '*#777#' || trimmed === '*#777' || trimmed === '#*777#' || trimmed.toLowerCase() === 'secret') {
+                onSecretTrigger();
+              } else if (trimmed) {
+                onSave(trimmed);
+              } else {
+                Toast('Enter an API key first');
+              }
+            }}
             data-focusable
           >💾 Save Key</button>
           <button
@@ -153,7 +208,7 @@ function SettingsScreen({ apiKey, onClear, onChangeKey, onBack }) {
       onCenter: null,
       onRight: null  // pushBackHandler handles this
     });
-  }, []);
+  }, [onClear]);
 
   return html`
     <div class="ck-ai-settings">
@@ -164,10 +219,10 @@ function SettingsScreen({ apiKey, onClear, onChangeKey, onBack }) {
 
       <div class="ck-ai-settings__section">
         <div class="ck-ai-settings__title">Model</div>
-        <div class="ck-ai-settings__value">gemini-2.0-flash-lite</div>
+        <div class="ck-ai-settings__value">Gemini 2.0 / 1.5 Flash</div>
       </div>
 
-      <div class="ck-ai-v1" style="width:100%;">
+      <div style="width:100%;">
         <div class="ck-actions ck-actions--stacked" style="gap:6px;">
           <button type="button" class="ck-action" onClick=${onChangeKey} data-focusable>
             🔑 Change API Key
@@ -196,7 +251,7 @@ function TypingIndicator() {
 }
 
 // ─── Chat Screen ──────────────────────────────────────────────────────────────
-function ChatScreen({ messages, isThinking, hasKey, onSend, onChip, onSettings }) {
+function ChatScreen({ messages, isThinking, hasKey, onSend, onChip, onSettings, onSecretTrigger }) {
   const [input, setInput] = useState('');
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -209,10 +264,15 @@ function ChatScreen({ messages, isThinking, hasKey, onSend, onChip, onSettings }
   const doSend = useCallback(() => {
     const text = input.trim();
     if (!text) return;
+    if (text === '*#777#' || text === '*#777' || text === '#*777#' || text.toLowerCase() === 'secret') {
+      onSecretTrigger();
+      setInput('');
+      return;
+    }
     if (!hasKey) { Toast('Set up API key first — press Menu'); return; }
     onSend(text);
     setInput('');
-  }, [input, hasKey, onSend]);
+  }, [input, hasKey, onSend, onSecretTrigger]);
 
   useEffect(() => {
     setSoftKeys({
@@ -225,7 +285,6 @@ function ChatScreen({ messages, isThinking, hasKey, onSend, onChip, onSettings }
     });
   }, [doSend]);
 
-  // Handle Enter key in textarea to send (Shift+Enter = new line)
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -233,13 +292,23 @@ function ChatScreen({ messages, isThinking, hasKey, onSend, onChip, onSettings }
     }
   };
 
+  const handleInput = (e) => {
+    const val = e.target.value;
+    setInput(val);
+    const trimmed = val.trim();
+    if (trimmed === '*#777#' || trimmed === '*#777' || trimmed === '#*777#' || trimmed.toLowerCase() === 'secret') {
+      onSecretTrigger();
+      setInput('');
+    }
+  };
+
   return html`
-    <${''}>
+    <div class="ck-ai-chat-body">
       <!-- Messages area -->
       <div class="ck-ai-messages">
         ${messages.length === 0 && !isThinking && html`
           <div class="ck-ai-empty">
-            <div class="ck-ai-empty__icon">🤖</div>
+            <div class="ck-ai-empty__icon" style="cursor:pointer;" onClick=${onSecretTrigger}>🤖</div>
             <div class="ck-ai-empty__text">AI Assistant Ready</div>
             <div class="ck-ai-empty__sub">${hasKey
               ? 'Type a message or pick a quick prompt below'
@@ -279,7 +348,7 @@ function ChatScreen({ messages, isThinking, hasKey, onSend, onChip, onSettings }
           class="ck-ai-textarea"
           placeholder=${hasKey ? 'Message AI...' : 'Set API key first...'}
           value=${input}
-          onInput=${e => setInput(e.target.value)}
+          onInput=${handleInput}
           onKeyDown=${handleKeyDown}
           rows="1"
           data-focusable
@@ -292,19 +361,19 @@ function ChatScreen({ messages, isThinking, hasKey, onSend, onChip, onSettings }
           aria-label="Send"
         >➤</button>
       </div>
-    <//>
+    </div>
   `;
 }
 
 // ─── Root AI App Component ────────────────────────────────────────────────────
 function AIApp({ router }) {
-  // Persistent state
   const [apiKey, setApiKey]     = useState(() => load('ck_ai_key', ''));
   const [messages, setMessages] = useState(() => load('ck_ai_msgs', []));
-
-  // Ephemeral state
   const [view, setView]         = useState(() => load('ck_ai_key', '') ? 'chat' : 'setup');
   const [isThinking, setThinking] = useState(false);
+
+  const tapCountRef = useRef(0);
+  const tapTimerRef = useRef(null);
 
   const viewRef = useRef(view);
   useEffect(() => { viewRef.current = view; }, [view]);
@@ -315,7 +384,7 @@ function AIApp({ router }) {
       const cur = viewRef.current;
       if (cur === 'settings') { setView('chat'); return; }
       if (cur === 'setup')    { setView(load('ck_ai_key', '') ? 'chat' : 'setup'); return; }
-      router.back(); // exit to OS from chat
+      router.back();
     };
     pushBackHandler(handleBack);
     return () => popBackHandler(handleBack);
@@ -334,6 +403,30 @@ function AIApp({ router }) {
     }
   }, [isThinking]);
 
+  // ── Secret Key Activation Trigger ───────────────────────────────────────────
+  const handleSecretTrigger = useCallback(async () => {
+    const sec = await loadSecretKey();
+    if (sec) {
+      save('ck_ai_key', sec);
+      setApiKey(sec);
+      setView('chat');
+      Toast('Secret Test Key Activated 🔑');
+    } else {
+      Toast('Secret key file missing locally');
+    }
+  }, []);
+
+  const handleAvatarClick = useCallback(() => {
+    tapCountRef.current += 1;
+    if (tapTimerRef.current) clearTimeout(tapTimerRef.current);
+    if (tapCountRef.current >= 3) {
+      tapCountRef.current = 0;
+      handleSecretTrigger();
+    } else {
+      tapTimerRef.current = setTimeout(() => { tapCountRef.current = 0; }, 1000);
+    }
+  }, [handleSecretTrigger]);
+
   // ── Send a message ──────────────────────────────────────────────────────────
   const sendMessage = useCallback(async (text) => {
     if (isThinking) return;
@@ -344,12 +437,11 @@ function AIApp({ router }) {
     save('ck_ai_msgs', updatedMsgs);
     setThinking(true);
 
-    // Keep last 12 messages as context to avoid token limits
     const context = updatedMsgs.slice(-12);
 
     try {
       if (!navigator.onLine) throw new Error('No internet connection');
-      if (!apiKey) throw new Error('API key not set — go to Menu → Settings');
+      if (!apiKey) throw new Error('API key not set — enter key or type *#777#');
 
       const reply = await callGemini(apiKey, context);
       const aiMsg = { role: 'assistant', text: reply, ts: timeNow() };
@@ -358,7 +450,7 @@ function AIApp({ router }) {
       save('ck_ai_msgs', finalMsgs);
     } catch (err) {
       const errText = err.message.includes('API_KEY_INVALID') || err.message.includes('API key not valid')
-        ? '⚠️ Invalid API key. Go to Settings to update it.'
+        ? '⚠️ Invalid API key. Type *#777# or update key in Settings.'
         : err.message.includes('QUOTA')
         ? '⚠️ API quota exceeded. Try again later.'
         : `⚠️ ${err.message}`;
@@ -372,13 +464,11 @@ function AIApp({ router }) {
     }
   }, [messages, apiKey, isThinking]);
 
-  // ── Chip handler ────────────────────────────────────────────────────────────
   const handleChip = useCallback((text) => {
-    if (!apiKey) { Toast('Set up API key first — press Menu'); return; }
+    if (!apiKey) { Toast('Set up API key first — type *#777#'); return; }
     sendMessage(text);
   }, [apiKey, sendMessage]);
 
-  // ── Save API key ────────────────────────────────────────────────────────────
   const handleSaveKey = useCallback((key) => {
     save('ck_ai_key', key);
     setApiKey(key);
@@ -386,7 +476,6 @@ function AIApp({ router }) {
     Toast('API key saved ✓');
   }, []);
 
-  // ── Clear history ───────────────────────────────────────────────────────────
   const handleClear = useCallback(() => {
     setMessages([]);
     save('ck_ai_msgs', []);
@@ -394,27 +483,19 @@ function AIApp({ router }) {
     Toast('Chat cleared');
   }, []);
 
-  // ── Softkey: Menu → Settings ────────────────────────────────────────────────
-  useEffect(() => {
-    if (view !== 'chat') return;
-    // Override LSK label for settings access on home chat view
-    // (doSend will re-set LSK to 'Send' when ChatScreen mounts — this just primes the menu)
-  }, [view]);
-
-  // ─── Render ─────────────────────────────────────────────────────────────────
   return html`
     <div class="ck-screen ck-ai-v1">
 
       <!-- Header (always visible) -->
       <header class="ck-ai-header">
-        <div class="ck-ai-header__avatar">🤖</div>
+        <div class="ck-ai-header__avatar" style="cursor:pointer;" onClick=${handleAvatarClick} title="Triple tap for dev key">🤖</div>
         <div class="ck-ai-header__info">
           <div class="ck-ai-header__title">AI Assistant</div>
           <div class="ck-ai-header__subtitle">
             ${view === 'setup' ? 'Setup required'
               : view === 'settings' ? 'Settings'
               : isThinking ? 'Thinking...'
-              : 'Gemini Flash Lite · Ready'}
+              : 'Gemini Flash · Ready'}
           </div>
         </div>
         <div class="ck-ai-header__status"></div>
@@ -425,6 +506,7 @@ function AIApp({ router }) {
         <${SetupScreen}
           onSave=${handleSaveKey}
           onSkip=${() => setView('chat')}
+          onSecretTrigger=${handleSecretTrigger}
         />
       `}
 
@@ -445,6 +527,7 @@ function AIApp({ router }) {
           onSend=${sendMessage}
           onChip=${handleChip}
           onSettings=${() => setView('settings')}
+          onSecretTrigger=${handleSecretTrigger}
         />
       `}
 
