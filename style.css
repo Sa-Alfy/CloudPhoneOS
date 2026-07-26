@@ -311,10 +311,6 @@ button { -webkit-tap-highlight-color: transparent; }
   position: relative;
 }
 
-.ck-calc-overlay-cell--corner {
-  /* Corner cells show the hw key label + operator */
-}
-
 .ck-calc-overlay-hw {
   font-size: 9px;
   font-weight: 700;
