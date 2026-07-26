@@ -9,20 +9,20 @@
 > A lightweight, modular micro-OS shell and application framework designed for cloud phone widgets and keypad-driven web environments.
 
 ```
-   ┌──────────────────────────────────────────────┐
-   │ 📶 12:00 AM                      CloudKit OS │
-   ├──────────────────────────────────────────────┤
-   │                                              │
-   │   🤖 AI Assistant        [Soon]              │
-   │   🌐 Translator          [Bangla ⇄ English] │
-   │  👉 🧮 Calculator        [Working]           │
-   │   ⛅ Weather             [Open-Meteo API]    │
-   │   📝 Notes               [Local Storage]     │
-   │   ⚙️ Settings            [Theme Toggle]      │
-   │                                              │
-   ├──────────────────────────────────────────────┤
-   │   [Search]          [Select]          [Back] │
-   └──────────────────────────────────────────────┘
++--------------------------------------------------+
+|  [|||] 12:00 AM                      CloudKit OS |
++--------------------------------------------------+
+|                                                  |
+|   * AI Assistant         [Coming Soon]           |
+|   * Translator           [Bangla <-> English]    |
+|  -> Calculator           [Working]               |
+|   * Weather              [Open-Meteo API]        |
+|   * Notes                [Local Storage]         |
+|   * Settings             [Theme Toggle]          |
+|                                                  |
++--------------------------------------------------+
+|   [Search]            [Select]           [Back]  |
++--------------------------------------------------+
 ```
 
 ---
