@@ -8,11 +8,10 @@ export const manifest = {
   icon: '☁️',
   order: 3,
   description: 'Current conditions & forecast.',
-  version: '1.0',
+  version: '2.0',
   keywords: ['climate', 'forecast', 'rain', 'temperature', 'sun', 'cloud'],
   route: 'weather'
 };
-
 
 const CACHE_KEY = 'weather:cache';
 
@@ -25,235 +24,316 @@ const WEATHER_CODES = {
   66: 'Light freezing rain', 67: 'Heavy freezing rain',
   71: 'Slight snow fall', 73: 'Moderate snow fall', 75: 'Heavy snow fall',
   77: 'Snow grains',
-  80: 'Rain showers', 81: 'Moderate rain showers', 82: 'Violent rain showers',
+  80: 'Patchy rain nearby', 81: 'Moderate rain showers', 82: 'Violent rain showers',
   85: 'Snow showers', 86: 'Heavy snow showers',
   95: 'Thunderstorm', 96: 'Thunderstorm with hail', 99: 'Thunderstorm with heavy hail'
 };
 
 function conditionLabel(code) {
-  return WEATHER_CODES[code] || 'Unknown conditions';
+  return WEATHER_CODES[code] ?? 'Unknown conditions';
 }
 
-function weatherIcon(code) {
-  if (code === 0)                        return '☀️';
-  if (code <= 2)                         return '⛅';
-  if (code === 3)                        return '☁️';
-  if (code <= 48)                        return '🌫️';
-  if (code <= 57)                        return '🌦️';
-  if (code <= 67)                        return '🌧️';
-  if (code <= 77)                        return '❄️';
-  if (code <= 82)                        return '🌧️';
-  if (code <= 86)                        return '🌨️';
+function heroIcon(code, isDay) {
+  if (!isDay) {
+    if (code <= 1)  return '🌙';
+    if (code <= 2)  return '🌥️';
+    if (code <= 3)  return '☁️';
+    if (code <= 48) return '🌫️';
+    if (code <= 67 || (code >= 80 && code <= 82)) return '🌧️';
+    if (code <= 77 || (code >= 85 && code <= 86)) return '🌨️';
+    return '⛈️';
+  }
+  if (code === 0)  return '☀️';
+  if (code <= 2)   return '⛅';
+  if (code === 3)  return '☁️';
+  if (code <= 48)  return '🌫️';
+  if (code <= 57)  return '🌦️';
+  if (code <= 67)  return '🌧️';
+  if (code <= 77)  return '❄️';
+  if (code <= 82)  return '🌧️';
+  if (code <= 86)  return '🌨️';
   return '⛈️';
 }
 
-async function fetchJson(url) {
-  const response = await fetch(url, { headers: { Accept: 'application/json' } });
-  if (!response.ok) throw new Error(`Request failed (${response.status})`);
-  return response.json();
+function rowIcon(code, isDay) {
+  return heroIcon(code, isDay);
 }
 
-function formatHumidity(v) { return typeof v === 'number' ? `${v}%` : '—'; }
-function formatWind(v)     { return typeof v === 'number' ? `${Math.round(v)} km/h` : '—'; }
+function bgClass(code, isDay) {
+  if (code <= 1)  return isDay ? 'wx-clear-day'   : 'wx-clear-night';
+  if (code <= 2)  return isDay ? 'wx-partly-day'  : 'wx-partly-night';
+  if (code === 3) return 'wx-overcast';
+  if (code <= 48) return 'wx-fog';
+  if (code <= 67 || (code >= 80 && code <= 82)) return 'wx-rain';
+  if (code <= 77 || (code >= 85 && code <= 86)) return 'wx-snow';
+  return 'wx-storm';
+}
 
-function formatTimestamp(ts) {
-  if (!ts) return '';
-  return new Date(ts).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+async function fetchJson(url) {
+  const res = await fetch(url, { headers: { Accept: 'application/json' } });
+  if (!res.ok) throw new Error(`Request failed (${res.status})`);
+  return res.json();
+}
+
+function formatHourLabel(isoString) {
+  const d = new Date(isoString);
+  const month = d.getMonth() + 1;
+  const day = d.getDate();
+  const h = d.getHours();
+  const ampm = h >= 12 ? 'PM' : 'AM';
+  const h12 = h % 12 || 12;
+  return { date: `${month}/${day}`, time: `${h12}${ampm}` };
 }
 
 export function renderWeather({ root, router }) {
   const wrapper = document.createElement('div');
-  wrapper.className = 'ck-screen ck-weather';
+  wrapper.className = 'ck-screen ck-weather-v2';
+
   wrapper.innerHTML = `
-    <div class="ck-weather-search-bar">
-      <input id="ck-city" class="ck-input" type="text" placeholder="Search city..." autocomplete="off" spellcheck="false" data-focusable>
-      <button type="button" class="ck-weather-search-btn" data-action="search" data-focusable>Search</button>
-    </div>
+    <div class="ck-wx-bg wx-partly-night" id="wx-bg">
 
-    <section class="ck-weather-hero" aria-live="polite" data-focusable>
-      <div class="ck-weather-hero__icon" id="ck-weather-hero-icon">🌤️</div>
-      <div class="ck-weather-hero__temp" id="ck-weather-hero-temp">—</div>
-      <div class="ck-weather-hero__location" id="ck-weather-hero-loc">Ready</div>
-      <div class="ck-weather-hero__cond" id="ck-weather-hero-cond">Type a city and search.</div>
-    </section>
-
-    <section class="ck-panel ck-weather-result" data-focusable>
-      <div class="ck-weather-grid" id="ck-weather-grid">
-        <div class="ck-weather-stat">
-          <div class="ck-weather-stat__label">Feels like</div>
-          <div class="ck-weather-stat__value" id="ck-weather-feels">—</div>
-        </div>
-        <div class="ck-weather-stat">
-          <div class="ck-weather-stat__label">Humidity</div>
-          <div class="ck-weather-stat__value" id="ck-weather-humidity">—</div>
-        </div>
-        <div class="ck-weather-stat">
-          <div class="ck-weather-stat__label">Wind</div>
-          <div class="ck-weather-stat__value" id="ck-weather-wind">—</div>
-        </div>
-        <div class="ck-weather-stat">
-          <div class="ck-weather-stat__label">Updated</div>
-          <div class="ck-weather-stat__value" id="ck-weather-note" style="font-size: 14px; color: var(--muted); margin-top: 8px; font-weight: normal;">—</div>
-        </div>
+      <!-- Search overlay -->
+      <div class="ck-wx-search-overlay" id="wx-search-overlay" hidden>
+        <input id="ck-city" class="ck-wx-search-input" type="text"
+               placeholder="Search city…" autocomplete="off" spellcheck="false">
+        <button type="button" class="ck-wx-search-btn" id="wx-search-go">Go</button>
       </div>
-    </section>
+
+      <!-- Hero -->
+      <div class="ck-wx-hero">
+        <div class="ck-wx-hero__left">
+          <div class="ck-wx-hero__city" id="wx-city">—</div>
+          <div class="ck-wx-hero__temp" id="wx-temp">—</div>
+          <div class="ck-wx-hero__cond" id="wx-cond">Loading…</div>
+        </div>
+        <div class="ck-wx-hero__icon" id="wx-icon">🌤️</div>
+      </div>
+
+      <!-- Hourly list -->
+      <div class="ck-wx-hourly" id="wx-hourly">
+        <div class="ck-wx-loading">Fetching forecast…</div>
+      </div>
+
+      <!-- Bottom nav bar -->
+      <div class="ck-wx-navbar">
+        <button class="ck-wx-navbar__btn" id="wx-menu-btn" type="button">☰</button>
+        <div class="ck-wx-navbar__dots" id="wx-dots">
+          <span class="ck-wx-dot ck-wx-dot--active"></span>
+          <span class="ck-wx-dot"></span>
+        </div>
+        <button class="ck-wx-navbar__btn" id="wx-back-btn" type="button">←</button>
+      </div>
+    </div>
   `;
 
-  const cityInput = wrapper.querySelector('#ck-city');
-  const heroIcon = wrapper.querySelector('#ck-weather-hero-icon');
-  const heroTemp = wrapper.querySelector('#ck-weather-hero-temp');
-  const heroLoc = wrapper.querySelector('#ck-weather-hero-loc');
-  const heroCond = wrapper.querySelector('#ck-weather-hero-cond');
-  const feelsEl = wrapper.querySelector('#ck-weather-feels');
-  const humidityEl = wrapper.querySelector('#ck-weather-humidity');
-  const windEl = wrapper.querySelector('#ck-weather-wind');
-  const noteEl = wrapper.querySelector('#ck-weather-note');
+  const bgEl          = wrapper.querySelector('#wx-bg');
+  const cityEl        = wrapper.querySelector('#wx-city');
+  const tempEl        = wrapper.querySelector('#wx-temp');
+  const condEl        = wrapper.querySelector('#wx-cond');
+  const iconEl        = wrapper.querySelector('#wx-icon');
+  const hourlyEl      = wrapper.querySelector('#wx-hourly');
+  const searchOverlay = wrapper.querySelector('#wx-search-overlay');
+  const cityInput     = wrapper.querySelector('#ck-city');
+  const goBtn         = wrapper.querySelector('#wx-search-go');
 
-  function setLoading(message = 'Loading weather…') {
-    heroLoc.textContent = message;
-    heroCond.textContent = 'Fetching current conditions…';
-    noteEl.textContent = 'Please wait.';
+  let focusedIdx  = 0;
+  let hourlyItems = [];
+  let searchMode  = false;
+
+  // ── Softkeys ─────────────────────────────────────────────────────────────
+  function setDefaultSoftkeys() {
+    setSoftKeys({
+      left: 'Search', center: '', right: 'Back',
+      onLeft: openSearch, onCenter: null, onRight: () => router.back()
+    });
   }
 
-  function setEmpty(message = 'No data') {
-    heroLoc.textContent = message;
-    heroCond.textContent = 'Try another city.';
-    heroTemp.textContent = '—';
-    feelsEl.textContent = '—';
-    humidityEl.textContent = '—';
-    windEl.textContent = '—';
-    noteEl.textContent = '—';
+  function setSearchSoftkeys() {
+    setSoftKeys({
+      left: '', center: 'Search', right: 'Cancel',
+      onLeft: null, onCenter: doSearch, onRight: closeSearch
+    });
   }
 
-  function renderData({ place, current, cached = false }) {
-    const icon = weatherIcon(current.weather_code);
-    heroIcon.textContent = icon;
-    heroTemp.textContent = `${Math.round(current.temperature_2m)}°C`;
-    heroLoc.textContent = place;
-    heroCond.textContent = conditionLabel(current.weather_code);
-    
-    feelsEl.textContent = `${Math.round(current.apparent_temperature)}°C`;
-    humidityEl.textContent = formatHumidity(current.relative_humidity_2m);
-    windEl.textContent = formatWind(current.wind_speed_10m);
-    noteEl.textContent = cached
-      ? `${formatTimestamp(load(CACHE_KEY)?.timestamp)} (Cached)`
-      : `${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`;
+  // ── Search overlay ────────────────────────────────────────────────────────
+  function openSearch() {
+    searchMode = true;
+    searchOverlay.hidden = false;
+    cityInput.focus();
+    setSearchSoftkeys();
   }
 
-  async function loadWeatherByCoords(latitude, longitude, place, { silent = false } = {}) {
-    if (!silent) setLoading();
+  function closeSearch() {
+    searchMode = false;
+    searchOverlay.hidden = true;
+    cityInput.blur();
+    setDefaultSoftkeys();
+  }
+
+  // ── Background ────────────────────────────────────────────────────────────
+  function applyBg(code, isDay) {
+    // Strip old wx-* classes
+    const keep = [...bgEl.classList].filter(c => !c.startsWith('wx-'));
+    bgEl.className = [...keep, bgClass(code, isDay)].join(' ');
+  }
+
+  // ── Hourly render ─────────────────────────────────────────────────────────
+  function buildHourlyItems(hourly) {
+    const now = Date.now();
+    // Find first hour >= now
+    let start = 0;
+    for (let i = 0; i < hourly.time.length; i++) {
+      if (new Date(hourly.time[i]).getTime() >= now) { start = i; break; }
+    }
+    const items = [];
+    for (let i = start; i < Math.min(start + 24, hourly.time.length); i++) {
+      const code = hourly.weather_code?.[i] ?? hourly.weathercode?.[i] ?? 0;
+      const isDay = hourly.is_day?.[i] ?? (new Date(hourly.time[i]).getHours() >= 6 && new Date(hourly.time[i]).getHours() < 19 ? 1 : 0);
+      items.push({
+        time:   hourly.time[i],
+        temp:   hourly.temperature_2m[i],
+        precip: hourly.precipitation_probability?.[i] ?? 0,
+        code,
+        isDay
+      });
+    }
+    return items;
+  }
+
+  function paintHourly() {
+    hourlyEl.innerHTML = '';
+    hourlyItems.forEach((item, i) => {
+      const { date, time } = formatHourLabel(item.time);
+      const icon = rowIcon(item.code, item.isDay);
+      const row = document.createElement('div');
+      row.className = 'ck-wx-hour' + (i === focusedIdx ? ' ck-wx-hour--active' : '');
+      row.innerHTML = `
+        <div class="ck-wx-hour__time">
+          <span class="ck-wx-hour__date">${date}</span>
+          <span class="ck-wx-hour__label">${time}</span>
+        </div>
+        <span class="ck-wx-hour__icon">${icon}</span>
+        <span class="ck-wx-hour__precip">${item.precip}%</span>
+        <span class="ck-wx-hour__temp">${Math.round(item.temp)}°</span>
+      `;
+      hourlyEl.appendChild(row);
+    });
+    // Scroll focused into view
+    hourlyEl.querySelector('.ck-wx-hour--active')?.scrollIntoView({ block: 'nearest' });
+  }
+
+  // ── Render current + hourly data ──────────────────────────────────────────
+  function renderData({ place, current, hourly, isDay }) {
+    applyBg(current.weather_code, isDay);
+    iconEl.textContent = heroIcon(current.weather_code, isDay);
+    tempEl.textContent = `${current.temperature_2m.toFixed(1)}°`;
+    cityEl.textContent = place;
+    condEl.textContent = conditionLabel(current.weather_code);
+    if (hourly) {
+      hourlyItems = buildHourlyItems(hourly);
+      focusedIdx  = 0;
+      paintHourly();
+    }
+  }
+
+  // ── API calls ─────────────────────────────────────────────────────────────
+  async function loadByCoords(lat, lon, place, { silent = false } = {}) {
+    if (!silent) {
+      condEl.textContent = 'Loading…';
+      hourlyEl.innerHTML = '<div class="ck-wx-loading">Fetching forecast…</div>';
+    }
+
     const url = new URL('https://api.open-meteo.com/v1/forecast');
-    url.searchParams.set('latitude', String(latitude));
-    url.searchParams.set('longitude', String(longitude));
-    url.searchParams.set('current', 'temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m');
-    url.searchParams.set('timezone', 'auto');
+    url.searchParams.set('latitude',  String(lat));
+    url.searchParams.set('longitude', String(lon));
+    url.searchParams.set('current',   'temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,wind_speed_10m,is_day');
+    url.searchParams.set('hourly',    'temperature_2m,precipitation_probability,weather_code,is_day');
+    url.searchParams.set('forecast_days', '2');
+    url.searchParams.set('timezone',  'auto');
 
-    const data = await fetchJson(url);
+    const data    = await fetchJson(url);
     const current = data.current;
-    if (!current) throw new Error('No current weather returned');
+    if (!current) throw new Error('No current weather data');
 
-    renderData({ place, current, cached: false });
-
-    save(CACHE_KEY, { city: place, current, timestamp: Date.now() });
-    if (!silent) Toast('Weather updated');
+    const isDay = current.is_day ?? 1;
+    renderData({ place, current, hourly: data.hourly, isDay });
+    save(CACHE_KEY, { city: place, lat, lon, current, hourly: data.hourly, isDay, timestamp: Date.now() });
+    if (!silent) Toast('Updated');
   }
 
   async function searchCity(city, { silent = false } = {}) {
     const name = city.trim();
     if (!name) { Toast('Type a city first'); return; }
-
-    if (!silent) setLoading(`Searching ${name}…`);
+    if (!silent) { cityEl.textContent = `${name}…`; condEl.textContent = ''; }
 
     const geo = new URL('https://geocoding-api.open-meteo.com/v1/search');
-    geo.searchParams.set('name', name);
-    geo.searchParams.set('count', '1');
+    geo.searchParams.set('name',     name);
+    geo.searchParams.set('count',    '1');
     geo.searchParams.set('language', 'en');
-    geo.searchParams.set('format', 'json');
+    geo.searchParams.set('format',   'json');
 
-    const places = await fetchJson(geo);
+    const places   = await fetchJson(geo);
     const location = places.results?.[0];
     if (!location) {
-      setEmpty('City not found');
+      cityEl.textContent = 'City not found';
       if (!silent) Toast('No match');
       return;
     }
-
-    const placeName = [location.name, location.admin1, location.country].filter(Boolean).join(', ');
-    await loadWeatherByCoords(location.latitude, location.longitude, placeName, { silent });
+    await loadByCoords(location.latitude, location.longitude, location.name, { silent });
   }
 
   async function useLocation() {
     if (!navigator.geolocation) { Toast('Location unavailable'); return; }
-    setLoading('Getting location…');
+    cityEl.textContent = 'Getting location…';
+    condEl.textContent = '';
     navigator.geolocation.getCurrentPosition(
-      async (position) => {
-        try {
-          await loadWeatherByCoords(
-            position.coords.latitude,
-            position.coords.longitude,
-            'Current location'
-          );
-        } catch (err) {
-          setEmpty('Location weather failed');
-          Toast(err.message || 'Weather request failed');
-        }
+      async ({ coords }) => {
+        try { await loadByCoords(coords.latitude, coords.longitude, 'My Location'); }
+        catch (err) { cityEl.textContent = 'Error'; Toast(err.message || 'Failed'); }
       },
-      (err) => {
-        setEmpty('Location blocked');
-        Toast(err.message || 'Permission denied');
-      },
+      (err) => { cityEl.textContent = 'Location blocked'; Toast(err.message || 'Denied'); },
       { enableHighAccuracy: true, timeout: 10000 }
     );
   }
 
   const doSearch = () => {
-    searchBtn.textContent = '⏳';
-    searchBtn.setAttribute('disabled', '');
-    searchCity(cityInput.value)
-      .catch((err) => {
-        setEmpty('Weather unavailable');
-        Toast(err.message || 'Network error');
-      })
-      .finally(() => {
-        searchBtn.textContent = 'Search';
-        searchBtn.removeAttribute('disabled');
-      });
+    const city = cityInput.value.trim();
+    if (!city) return;
+    closeSearch();
+    searchCity(city).catch(err => { cityEl.textContent = 'Error'; Toast(err.message || 'Network error'); });
   };
 
-  setSoftKeys({
-    left: 'Location',
-    center: 'Search',
-    right: 'Back',
-    onLeft: () => useLocation(),
-    onCenter: () => doSearch(),
-    onRight: () => router.back()
-  });
+  // ── Events ────────────────────────────────────────────────────────────────
+  goBtn.addEventListener('click', doSearch);
+  cityInput.addEventListener('keydown', e => { if (e.key === 'Enter') { e.preventDefault(); doSearch(); } });
+  wrapper.querySelector('#wx-menu-btn').addEventListener('click', openSearch);
+  wrapper.querySelector('#wx-back-btn').addEventListener('click', () => router.back());
 
-  const searchBtn = wrapper.querySelector('[data-action="search"]');
-  searchBtn.addEventListener('click', doSearch);
-
-  cityInput.addEventListener('keydown', (event) => {
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      doSearch();
+  // D-pad scrolls through hourly rows
+  const keyHandler = e => {
+    if (!root.contains(wrapper)) { window.removeEventListener('keydown', keyHandler); return; }
+    if (searchMode) return;
+    if (e.key === 'ArrowDown' && focusedIdx < hourlyItems.length - 1) {
+      e.preventDefault(); focusedIdx++; paintHourly();
+    } else if (e.key === 'ArrowUp' && focusedIdx > 0) {
+      e.preventDefault(); focusedIdx--; paintHourly();
     }
-  });
+  };
+  window.addEventListener('keydown', keyHandler);
 
+  setDefaultSoftkeys();
   root.appendChild(wrapper);
 
+  // ── Boot: load cache or default city ─────────────────────────────────────
   const cached = load(CACHE_KEY);
-  if (cached?.city && cached?.current) {
-    cityInput.value = cached.city;
-    renderData({ place: cached.city, current: cached.current, cached: true });
-
-    searchCity(cached.city, { silent: true }).catch(() => {});
+  if (cached?.current) {
+    renderData({ place: cached.city, current: cached.current, hourly: cached.hourly, isDay: cached.isDay ?? 1 });
+    if (cached.lat && cached.lon) {
+      loadByCoords(cached.lat, cached.lon, cached.city, { silent: true }).catch(() => {});
+    } else {
+      searchCity(cached.city, { silent: true }).catch(() => {});
+    }
   } else {
-    const defaultCity = 'Dhaka';
-    cityInput.value = defaultCity;
-    searchCity(defaultCity).catch((err) => {
-      setEmpty('Weather unavailable');
-      Toast(err.message || 'Network error');
-    });
+    searchCity('Dhaka').catch(err => { cityEl.textContent = 'Error'; Toast(err.message || 'Network error'); });
   }
 }
-
