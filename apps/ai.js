@@ -204,23 +204,80 @@ function SetupScreen({ onSave, onSkip, onSecretTrigger }) {
 }
 
 // ─── Settings Screen ──────────────────────────────────────────────────────────
-function SettingsScreen({ apiKey, onClear, onChangeKey, onBack }) {
+function SettingsScreen({ apiKey, onClear, onSaveKey, onSecretTrigger, onBack }) {
+  const [newKey, setNewKey] = useState(apiKey || '');
+
   useEffect(() => {
     setSoftKeys({
-      left: 'Clear Chat',
+      left: 'Save Key',
       center: 'Select',
       right: 'Back',
-      onLeft: onClear,
+      onLeft: () => {
+        const trimmed = newKey.trim();
+        if (trimmed === '*#777#' || trimmed === '*#777' || trimmed === '#*777#' || trimmed.toLowerCase() === 'secret') {
+          onSecretTrigger();
+        } else if (trimmed) {
+          onSaveKey(trimmed);
+        } else {
+          Toast('Enter an API key first');
+        }
+      },
       onCenter: null,
       onRight: null  // pushBackHandler handles this
     });
-  }, [onClear]);
+  }, [newKey, onSaveKey, onSecretTrigger]);
+
+  const handleInput = (e) => {
+    const val = e.target.value;
+    setNewKey(val);
+    const trimmed = val.trim();
+    if (trimmed === '*#777#' || trimmed === '*#777' || trimmed === '#*777#' || trimmed.toLowerCase() === 'secret') {
+      onSecretTrigger();
+    }
+  };
 
   return html`
     <div class="ck-ai-settings">
       <div class="ck-ai-settings__section">
-        <div class="ck-ai-settings__title">API Key</div>
+        <div class="ck-ai-settings__title">Active Key</div>
         <div class="ck-ai-settings__value">${maskKey(apiKey)}</div>
+      </div>
+
+      <div class="ck-ai-settings__section">
+        <div class="ck-ai-settings__title">Update API Key</div>
+        <input
+          class="ck-ai-setup__input"
+          type="password"
+          placeholder="Paste new Gemini API key..."
+          value=${newKey}
+          onInput=${handleInput}
+          data-focusable
+        />
+        <div style="display:flex; gap:6px; margin-top:6px;">
+          <button
+            type="button"
+            class="ck-action"
+            style="flex:1;"
+            onClick=${() => {
+              const trimmed = newKey.trim();
+              if (trimmed === '*#777#' || trimmed === '*#777' || trimmed === '#*777#' || trimmed.toLowerCase() === 'secret') {
+                onSecretTrigger();
+              } else if (trimmed) {
+                onSaveKey(trimmed);
+              } else {
+                Toast('Enter an API key first');
+              }
+            }}
+            data-focusable
+          >💾 Save Key</button>
+          <button
+            type="button"
+            class="ck-action"
+            style="flex:1;"
+            onClick=${onSecretTrigger}
+            data-focusable
+          >🔑 Dev Key</button>
+        </div>
       </div>
 
       <div class="ck-ai-settings__section">
@@ -230,9 +287,6 @@ function SettingsScreen({ apiKey, onClear, onChangeKey, onBack }) {
 
       <div style="width:100%;">
         <div class="ck-actions ck-actions--stacked" style="gap:6px;">
-          <button type="button" class="ck-action" onClick=${onChangeKey} data-focusable>
-            🔑 Change API Key
-          </button>
           <button type="button" class="ck-action" onClick=${onClear} data-focusable>
             🗑️ Clear Chat History
           </button>
@@ -520,7 +574,8 @@ function AIApp({ router }) {
         <${SettingsScreen}
           apiKey=${apiKey}
           onClear=${handleClear}
-          onChangeKey=${() => setView('setup')}
+          onSaveKey=${handleSaveKey}
+          onSecretTrigger=${handleSecretTrigger}
           onBack=${() => setView('chat')}
         />
       `}
