@@ -144,19 +144,47 @@ export function renderCalculator({ root, router }) {
   root.appendChild(wrapper);
   refresh();
 
+  const PHONE_KEY_MAP = {
+    '0': '0', '1': '1', '2': '2', '3': '3', '4': '4',
+    '5': '5', '6': '6', '7': '7', '8': '8', '9': '9',
+    'Numpad0': '0', 'Numpad1': '1', 'Numpad2': '2', 'Numpad3': '3', 'Numpad4': '4',
+    'Numpad5': '5', 'Numpad6': '6', 'Numpad7': '7', 'Numpad8': '8', 'Numpad9': '9',
+    '.': '.', 'Decimal': '.', 'NumpadDecimal': '.',
+    '+': '+', 'Add': '+', 'NumpadAdd': '+',
+    '-': '-', 'Subtract': '-', 'NumpadSubtract': '-',
+    '*': '×', 'x': '×', 'X': '×', 'Multiply': '×', 'NumpadMultiply': '×',
+    '/': '÷', 'Divide': '÷', 'NumpadDivide': '÷',
+    '=': '=', 'Enter': '=', 'NumpadEnter': '=',
+    'Backspace': 'BACKSPACE', 'Delete': 'C', 'Escape': 'BACK',
+    'Clear': 'C'
+  };
+
+  const phoneKeyHandler = (event) => {
+    if (!root.contains(wrapper)) {
+      window.removeEventListener('keydown', phoneKeyHandler);
+      return;
+    }
+
+    const tag = document.activeElement?.tagName;
+    if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+
+    const mapped = PHONE_KEY_MAP[event.key];
+    if (!mapped) return;
+
+    if (event.key.startsWith('Arrow')) return;
+
+    event.preventDefault();
+    handleValue(mapped);
+  };
+
+  window.addEventListener('keydown', phoneKeyHandler);
+
   // DEV_MODE only: let PC users type numbers and operators directly.
   // On a real keypad device this block is never reached (DEV_MODE = false).
   if (DEV_MODE) {
     const DEV_KEY_MAP = {
-      '0': '0', '1': '1', '2': '2', '3': '3', '4': '4',
-      '5': '5', '6': '6', '7': '7', '8': '8', '9': '9',
-      '.': '.', '+': '+', '-': '-',
-      '*': '×', '/': '÷', 'x': '×',
-      '(': '(', ')': ')',
-      '=': '=', 'Enter': '=',
-      'Backspace': 'BACKSPACE',
-      'c': 'C', 'C': 'C', 'Delete': 'C',
-      'Escape': 'BACK',
+      ...PHONE_KEY_MAP,
+      'c': 'C'
     };
 
     const devKeyHandler = (event) => {

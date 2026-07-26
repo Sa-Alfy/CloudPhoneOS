@@ -232,32 +232,33 @@ button { -webkit-tap-highlight-color: transparent; }
 }
 
 .ck-calculator {
-  gap: 12px;
+  gap: 8px;
 }
 
 .ck-calc-display {
   position: relative;
+  padding: 12px;
 }
 
 .ck-calc-expression {
-  margin-top: 6px;
-  font-size: 18px;
+  margin-top: 4px;
+  font-size: 16px;
   color: var(--muted);
   word-break: break-word;
-  min-height: 24px;
+  min-height: 20px;
 }
 
 .ck-calc-result {
-  margin-top: 6px;
-  font-size: 30px;
+  margin-top: 4px;
+  font-size: 24px;
   font-weight: 900;
   word-break: break-word;
-  min-height: 36px;
+  min-height: 28px;
 }
 
 .ck-calc-hint {
-  margin-top: 12px;
-  font-size: 12px;
+  margin-top: 8px;
+  font-size: 11px;
   color: var(--muted);
 }
 
@@ -266,8 +267,52 @@ button { -webkit-tap-highlight-color: transparent; }
 }
 
 .ck-calc-key {
-  min-height: 56px;
-  font-size: 16px;
+  min-height: 48px;
+  font-size: 15px;
+}
+
+.ck-calc-pad {
+  gap: 8px;
+}
+
+.ck-calc-pad .ck-calc-key {
+  padding: 0;
+}
+
+@media (max-width: 360px) {
+  .ck-calculator {
+    gap: 6px;
+  }
+
+  .ck-calc-display {
+    padding: 10px;
+  }
+
+  .ck-calc-expression {
+    font-size: 15px;
+    min-height: 18px;
+  }
+
+  .ck-calc-result {
+    font-size: 22px;
+    min-height: 26px;
+  }
+
+  .ck-calc-hint {
+    margin-top: 6px;
+    font-size: 10px;
+  }
+
+  .ck-calc-pad {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 6px;
+  }
+
+  .ck-calc-key {
+    min-height: 44px;
+    font-size: 14px;
+    border-radius: 12px;
+  }
 }
 
 .ck-textarea {
