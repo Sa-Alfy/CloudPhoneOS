@@ -92,15 +92,15 @@ export function renderWeather({ root, router }) {
   wrapper.innerHTML = `
     <div class="ck-wx-bg wx-partly-night" id="wx-bg">
 
-      <!-- Search overlay -->
-      <div class="ck-wx-search-overlay" id="wx-search-overlay" hidden>
+      <!-- Search panel (swaps with hero) -->
+      <div class="ck-wx-search-panel" id="wx-search-panel" hidden>
         <input id="ck-city" class="ck-wx-search-input" type="text"
                placeholder="Search city…" autocomplete="off" spellcheck="false">
         <button type="button" class="ck-wx-search-btn" id="wx-search-go">Go</button>
       </div>
 
       <!-- Hero -->
-      <div class="ck-wx-hero">
+      <div class="ck-wx-hero" id="wx-hero">
         <div class="ck-wx-hero__left">
           <div class="ck-wx-hero__city" id="wx-city">—</div>
           <div class="ck-wx-hero__temp" id="wx-temp">—</div>
@@ -126,15 +126,16 @@ export function renderWeather({ root, router }) {
     </div>
   `;
 
-  const bgEl          = wrapper.querySelector('#wx-bg');
-  const cityEl        = wrapper.querySelector('#wx-city');
-  const tempEl        = wrapper.querySelector('#wx-temp');
-  const condEl        = wrapper.querySelector('#wx-cond');
-  const iconEl        = wrapper.querySelector('#wx-icon');
-  const hourlyEl      = wrapper.querySelector('#wx-hourly');
-  const searchOverlay = wrapper.querySelector('#wx-search-overlay');
-  const cityInput     = wrapper.querySelector('#ck-city');
-  const goBtn         = wrapper.querySelector('#wx-search-go');
+  const bgEl       = wrapper.querySelector('#wx-bg');
+  const cityEl     = wrapper.querySelector('#wx-city');
+  const tempEl     = wrapper.querySelector('#wx-temp');
+  const condEl     = wrapper.querySelector('#wx-cond');
+  const iconEl     = wrapper.querySelector('#wx-icon');
+  const hourlyEl   = wrapper.querySelector('#wx-hourly');
+  const heroEl     = wrapper.querySelector('#wx-hero');
+  const searchPanel = wrapper.querySelector('#wx-search-panel');
+  const cityInput  = wrapper.querySelector('#ck-city');
+  const goBtn      = wrapper.querySelector('#wx-search-go');
 
   let focusedIdx  = 0;
   let hourlyItems = [];
@@ -158,14 +159,16 @@ export function renderWeather({ root, router }) {
   // ── Search overlay ────────────────────────────────────────────────────────
   function openSearch() {
     searchMode = true;
-    searchOverlay.hidden = false;
+    heroEl.hidden = true;
+    searchPanel.hidden = false;
     cityInput.focus();
     setSearchSoftkeys();
   }
 
   function closeSearch() {
     searchMode = false;
-    searchOverlay.hidden = true;
+    searchPanel.hidden = true;
+    heroEl.hidden = false;
     cityInput.blur();
     setDefaultSoftkeys();
   }

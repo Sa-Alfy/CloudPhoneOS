@@ -809,21 +809,19 @@ button { -webkit-tap-highlight-color: transparent; }
   background: linear-gradient(170deg, #0c0d1a 0%, #18112a 55%, #200f35 100%);
 }
 
-/* ── Search overlay ──────────────────────────────────────────────────────── */
-.ck-wx-search-overlay {
-  position: absolute;
-  top: 0; left: 0; right: 0;
-  z-index: 10;
+/* ── Search panel (swaps with hero when open) ────────────────────────────── */
+.ck-wx-search-panel {
+  position: relative;
+  z-index: 2;
   display: flex;
   gap: 8px;
-  padding: 10px 12px;
-  background: rgba(0,0,0,.72);
-  backdrop-filter: blur(6px);
+  padding: 14px 12px;
+  flex-shrink: 0;
 }
 
 .ck-wx-search-input {
   flex: 1;
-  padding: 8px 12px;
+  padding: 10px 12px;
   border-radius: 10px;
   border: 1px solid rgba(255,255,255,.22);
   background: rgba(255,255,255,.12);
