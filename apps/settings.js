@@ -1,6 +1,7 @@
 import { toggleTheme } from '../core/theme.js';
-import { renderMenu, Toast } from '../core/components.js';
+import { renderMenu, Toast, Dialog } from '../core/components.js';
 import { setSoftKeys } from '../core/softkeys.js';
+import { load, save } from '../core/storage.js';
 
 export const manifest = {
   id: 'settings',
@@ -9,12 +10,16 @@ export const manifest = {
   order: 6,
   description: 'System preferences & themes.',
   version: '1.0',
-  keywords: ['config', 'theme', 'dark', 'light', 'options', 'system'],
+  keywords: ['config', 'theme', 'dark', 'light', 'options', 'system', 'ai', 'key'],
   route: 'settings'
 };
 
-
 export function renderSettings({ root, router }) {
+  const currentKey = load('ck_ai_key', '');
+  const maskedKey = currentKey
+    ? currentKey.slice(0, 6) + '••••' + currentKey.slice(-4)
+    : 'Not set (tap to configure)';
+
   setSoftKeys({
     left: 'Toggle',
     center: 'Select',
@@ -37,6 +42,14 @@ export function renderSettings({ root, router }) {
       }
     },
     {
+      label: '🤖 AI Assistant Key',
+      meta: maskedKey,
+      onSelect: () => {
+        // Open AI App directly to configure/update key
+        router.open('ai');
+      }
+    },
+    {
       label: 'About CloudKit',
       meta: 'Developed by Shariar Ahamed',
       onSelect: () => router.open('about')
@@ -48,4 +61,3 @@ export function renderSettings({ root, router }) {
     }
   ], { emptyMessage: 'Settings unavailable' });
 }
-
