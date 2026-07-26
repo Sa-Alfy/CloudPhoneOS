@@ -79,7 +79,7 @@ export class Router {
     this._lastNavTime = now;
 
     if (this.stack.length === 0) {
-      window.dispatchEvent(new Event('ck:confirm-exit'));
+      this.open('home', {}, { pushHistory: false });
       return;
     }
 
