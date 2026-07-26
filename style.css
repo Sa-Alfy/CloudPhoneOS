@@ -231,88 +231,123 @@ button { -webkit-tap-highlight-color: transparent; }
   grid-template-columns: 1fr;
 }
 
-.ck-calculator {
-  gap: 8px;
-}
-
-.ck-calc-display {
-  position: relative;
-  padding: 12px;
-}
-
-.ck-calc-expression {
-  margin-top: 4px;
-  font-size: 16px;
-  color: var(--muted);
-  word-break: break-word;
-  min-height: 20px;
-}
-
-.ck-calc-result {
-  margin-top: 4px;
-  font-size: 24px;
-  font-weight: 900;
-  word-break: break-word;
-  min-height: 28px;
-}
-
-.ck-calc-hint {
-  margin-top: 8px;
-  font-size: 11px;
-  color: var(--muted);
-}
-
-.ck-calc-pad {
-  grid-template-columns: repeat(4, minmax(0, 1fr));
-}
-
-.ck-calc-key {
-  min-height: 48px;
-  font-size: 15px;
-}
-
-.ck-calc-pad {
-  gap: 8px;
-}
-
-.ck-calc-pad .ck-calc-key {
+/* Calculator screen — remove .ck-app padding so display fills edge-to-edge */
+.ck-app:has(.ck-calculator) {
   padding: 0;
+  overflow: hidden;
 }
 
+/* ── Calculator v2 — Button-Phone Style ─────────────────────────────────── */
+
+.ck-calculator {
+  gap: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Dark display area — takes up most of the screen */
+.ck-calc-display-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: flex-end;
+  padding: 16px 18px 20px;
+  background: #000;
+  overflow: hidden;
+}
+
+.ck-calc-expression-line {
+  font-size: 14px;
+  color: rgba(255,255,255,.45);
+  word-break: break-all;
+  text-align: right;
+  min-height: 18px;
+  max-width: 100%;
+  line-height: 1.4;
+}
+
+.ck-calc-result-big {
+  font-size: 52px;
+  font-weight: 300;
+  color: #ffffff;
+  text-align: right;
+  word-break: break-all;
+  line-height: 1.1;
+  letter-spacing: -1px;
+  max-width: 100%;
+}
+
+/* Cyan keypad overlay — fixed at the bottom */
+.ck-calc-keypad-overlay {
+  background: linear-gradient(160deg, #00c2e8 0%, #0099cc 100%);
+  padding: 10px 12px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  flex-shrink: 0;
+}
+
+.ck-calc-overlay-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 0;
+}
+
+.ck-calc-overlay-row--mid {
+  padding: 4px 0;
+  border-top: 1px solid rgba(255,255,255,.25);
+  border-bottom: 1px solid rgba(255,255,255,.25);
+}
+
+.ck-calc-overlay-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 6px 4px;
+  gap: 2px;
+  position: relative;
+}
+
+.ck-calc-overlay-cell--corner {
+  /* Corner cells show the hw key label + operator */
+}
+
+.ck-calc-overlay-hw {
+  font-size: 9px;
+  font-weight: 700;
+  color: rgba(255,255,255,.55);
+  letter-spacing: .04em;
+  line-height: 1;
+}
+
+.ck-calc-overlay-op {
+  font-size: 18px;
+  font-weight: 300;
+  color: rgba(255,255,255,.9);
+  line-height: 1;
+}
+
+.ck-calc-overlay-op--main {
+  font-size: 22px;
+  font-weight: 200;
+  color: #fff;
+}
+
+/* Responsive tweaks */
 @media (max-width: 360px) {
-  .ck-calculator {
-    gap: 6px;
-  }
+  .ck-calc-result-big  { font-size: 42px; }
+  .ck-calc-overlay-op { font-size: 16px; }
+  .ck-calc-overlay-op--main { font-size: 20px; }
+}
 
-  .ck-calc-display {
-    padding: 10px;
-  }
-
-  .ck-calc-expression {
-    font-size: 15px;
-    min-height: 18px;
-  }
-
-  .ck-calc-result {
-    font-size: 22px;
-    min-height: 26px;
-  }
-
-  .ck-calc-hint {
-    margin-top: 6px;
-    font-size: 10px;
-  }
-
-  .ck-calc-pad {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 6px;
-  }
-
-  .ck-calc-key {
-    min-height: 44px;
-    font-size: 14px;
-    border-radius: 12px;
-  }
+@media (max-width: 320px) {
+  .ck-calc-result-big  { font-size: 34px; }
+  .ck-calc-overlay-op { font-size: 14px; }
+  .ck-calc-overlay-op--main { font-size: 18px; }
+  .ck-calc-keypad-overlay { padding: 8px 10px 10px; }
 }
 
 .ck-textarea {

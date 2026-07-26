@@ -7,11 +7,10 @@ export const manifest = {
   icon: '🧮',
   order: 1,
   description: 'Quick calculations.',
-  version: '1.0',
+  version: '2.0',
   keywords: ['math', 'calc', 'add', 'subtract', 'numbers', 'equal'],
   route: 'calculator'
 };
-
 
 // DEV_MODE: enables direct keyboard number/operator input on PC.
 // Auto-detected: true on wide screens (desktop/laptop), false on real phone screens.
@@ -19,7 +18,6 @@ const DEV_MODE = window.screen.width > 480;
 
 function calc(expr) {
   if (!expr) return '';
-  // Normalise display operators to JS operators before evaluating.
   const normalised = expr.replace(/×/g, '*').replace(/÷/g, '/');
   const safe = normalised.replace(/[^0-9+\-*/().% ]/g, '');
   try {
@@ -33,61 +31,73 @@ function calc(expr) {
 export function renderCalculator({ root, router }) {
   const wrapper = document.createElement('div');
   wrapper.className = 'ck-screen ck-calculator';
+
+  // ── Display area ─────────────────────────────────────────────────────────
   wrapper.innerHTML = `
-    <div class="ck-display ck-calc-display">
-      <div class="ck-display__label">Expression</div>
-      <div id="calc-expression" class="ck-calc-expression">0</div>
-      <div class="ck-display__label">Result</div>
-      <div id="calc-result" class="ck-calc-result">0</div>
-      <div class="ck-calc-hint">Use arrows to move, OK to press${DEV_MODE ? ' · PC: type digits directly' : ''}</div>
+    <div class="ck-calc-display-area">
+      <div id="calc-expression" class="ck-calc-expression-line"></div>
+      <div id="calc-result" class="ck-calc-result-big">0</div>
+    </div>
+
+    <div class="ck-calc-keypad-overlay">
+      <!-- Row 1: maps to * key | nav-up | # key -->
+      <div class="ck-calc-overlay-row">
+        <div class="ck-calc-overlay-cell ck-calc-overlay-cell--corner">
+          <span class="ck-calc-overlay-hw">*</span>
+          <span class="ck-calc-overlay-op">±</span>
+        </div>
+        <div class="ck-calc-overlay-cell ck-calc-overlay-cell--center">
+          <span class="ck-calc-overlay-op ck-calc-overlay-op--main">+</span>
+        </div>
+        <div class="ck-calc-overlay-cell ck-calc-overlay-cell--corner">
+          <span class="ck-calc-overlay-hw">#</span>
+          <span class="ck-calc-overlay-op">.</span>
+        </div>
+      </div>
+
+      <!-- Row 2: nav-left | ok/center | nav-right -->
+      <div class="ck-calc-overlay-row ck-calc-overlay-row--mid">
+        <div class="ck-calc-overlay-cell ck-calc-overlay-cell--center">
+          <span class="ck-calc-overlay-op ck-calc-overlay-op--main">÷</span>
+        </div>
+        <div class="ck-calc-overlay-cell ck-calc-overlay-cell--center">
+          <span class="ck-calc-overlay-op ck-calc-overlay-op--main">=</span>
+        </div>
+        <div class="ck-calc-overlay-cell ck-calc-overlay-cell--center">
+          <span class="ck-calc-overlay-op ck-calc-overlay-op--main">×</span>
+        </div>
+      </div>
+
+      <!-- Row 3: left-softkey | nav-down | right-softkey -->
+      <div class="ck-calc-overlay-row">
+        <div class="ck-calc-overlay-cell ck-calc-overlay-cell--corner">
+          <span class="ck-calc-overlay-op">%</span>
+        </div>
+        <div class="ck-calc-overlay-cell ck-calc-overlay-cell--center">
+          <span class="ck-calc-overlay-op ck-calc-overlay-op--main">−</span>
+        </div>
+        <div class="ck-calc-overlay-cell ck-calc-overlay-cell--corner">
+          <span class="ck-calc-overlay-op">←</span>
+        </div>
+      </div>
     </div>
   `;
-
-  const pad = document.createElement('div');
-  pad.className = 'ck-grid ck-calc-pad';
 
   let expression = '';
   let lastResult = '0';
 
-  const exprEl = wrapper.querySelector('#calc-expression');
+  const exprEl  = wrapper.querySelector('#calc-expression');
   const resultEl = wrapper.querySelector('#calc-result');
 
-  // Keys store the display label (×, ÷) — calc() normalises internally.
-  const keys = [
-    { label: 'C',    value: 'C' },
-    { label: '⌫',   value: 'BACKSPACE' },
-    { label: '(',    value: '(' },
-    { label: ')',    value: ')' },
-    { label: '7',    value: '7' },
-    { label: '8',    value: '8' },
-    { label: '9',    value: '9' },
-    { label: '÷',    value: '÷' },
-    { label: '4',    value: '4' },
-    { label: '5',    value: '5' },
-    { label: '6',    value: '6' },
-    { label: '×',    value: '×' },
-    { label: '1',    value: '1' },
-    { label: '2',    value: '2' },
-    { label: '3',    value: '3' },
-    { label: '-',    value: '-' },
-    { label: '0',    value: '0' },
-    { label: '.',    value: '.' },
-    { label: '=',    value: '=' },
-    { label: 'Back', value: 'BACK' },
-  ];
-
   function refresh() {
-    exprEl.textContent = expression || '0';
-    // Show live preview using the current expression.
+    exprEl.textContent = expression || '';
     const preview = expression ? calc(expression) : lastResult;
     resultEl.textContent = preview || '0';
   }
 
   function append(token) {
     if (!token) return;
-    // Disallow operators at the very start (except minus for negation).
     if (!expression && /[+×÷/.%)]/.test(token)) return;
-    // Store display chars (× ÷) directly — calc() normalises on eval.
     expression += token;
   }
 
@@ -115,6 +125,15 @@ export function renderCalculator({ root, router }) {
         }
         break;
       }
+      case 'TOGGLE_SIGN': {
+        if (!expression) break;
+        if (expression.startsWith('-')) {
+          expression = expression.slice(1);
+        } else {
+          expression = '-' + expression;
+        }
+        break;
+      }
       default:
         append(value);
     }
@@ -122,41 +141,40 @@ export function renderCalculator({ root, router }) {
   }
 
   setSoftKeys({
-    left: 'Clear',
-    center: 'Select',
-    right: 'Back',
-    onLeft: () => handleValue('C'),
-    onCenter: null,
-    onRight: () => router.back()
+    left: '%',
+    center: '=',
+    right: '⌫',
+    onLeft:   () => handleValue('%'),
+    onCenter: () => handleValue('='),
+    onRight:  () => handleValue('BACKSPACE')
   });
 
-  keys.forEach(({ label, value }) => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    btn.className = 'ck-key ck-calc-key';
-    btn.dataset.focusable = '';
-    btn.textContent = label;
-    btn.addEventListener('click', () => handleValue(value));
-    pad.appendChild(btn);
-  });
-
-  wrapper.appendChild(pad);
   root.appendChild(wrapper);
   refresh();
 
+  // ── Key maps ─────────────────────────────────────────────────────────────
+  // Phone hardware key → calculator action
   const PHONE_KEY_MAP = {
+    // Digits
     '0': '0', '1': '1', '2': '2', '3': '3', '4': '4',
     '5': '5', '6': '6', '7': '7', '8': '8', '9': '9',
-    'Numpad0': '0', 'Numpad1': '1', 'Numpad2': '2', 'Numpad3': '3', 'Numpad4': '4',
-    'Numpad5': '5', 'Numpad6': '6', 'Numpad7': '7', 'Numpad8': '8', 'Numpad9': '9',
+    // D-pad / nav — mapped to operators (matching the overlay)
+    'ArrowUp':    '+',
+    'ArrowLeft':  '÷',
+    'ArrowRight': '×',
+    'ArrowDown':  '-',
+    'Enter':      '=',
+    // * key → toggle sign, # key → decimal point
+    '*': 'TOGGLE_SIGN',
+    '#': '.',
+    // PC convenience
     '.': '.', 'Decimal': '.', 'NumpadDecimal': '.',
     '+': '+', 'Add': '+', 'NumpadAdd': '+',
     '-': '-', 'Subtract': '-', 'NumpadSubtract': '-',
-    '*': '×', 'x': '×', 'X': '×', 'Multiply': '×', 'NumpadMultiply': '×',
+    'x': '×', 'X': '×', 'Multiply': '×', 'NumpadMultiply': '×',
     '/': '÷', 'Divide': '÷', 'NumpadDivide': '÷',
-    '=': '=', 'Enter': '=', 'NumpadEnter': '=',
+    '=': '=', 'NumpadEnter': '=',
     'Backspace': 'BACKSPACE', 'Delete': 'C', 'Escape': 'BACK',
-    'Clear': 'C'
   };
 
   const phoneKeyHandler = (event) => {
@@ -164,14 +182,11 @@ export function renderCalculator({ root, router }) {
       window.removeEventListener('keydown', phoneKeyHandler);
       return;
     }
-
     const tag = document.activeElement?.tagName;
     if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
 
     const mapped = PHONE_KEY_MAP[event.key];
     if (!mapped) return;
-
-    if (event.key.startsWith('Arrow')) return;
 
     event.preventDefault();
     handleValue(mapped);
@@ -179,32 +194,20 @@ export function renderCalculator({ root, router }) {
 
   window.addEventListener('keydown', phoneKeyHandler);
 
-  // DEV_MODE only: let PC users type numbers and operators directly.
-  // On a real keypad device this block is never reached (DEV_MODE = false).
   if (DEV_MODE) {
-    const DEV_KEY_MAP = {
-      ...PHONE_KEY_MAP,
-      'c': 'C'
-    };
-
+    const DEV_KEY_MAP = { ...PHONE_KEY_MAP, 'c': 'C' };
     const devKeyHandler = (event) => {
-      // Only intercept if focus is NOT in an editable element and the
-      // calculator screen is still mounted.
       if (!root.contains(wrapper)) {
         window.removeEventListener('keydown', devKeyHandler);
         return;
       }
       const tag = document.activeElement?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-
       const mapped = DEV_KEY_MAP[event.key];
       if (!mapped) return;
-      // Let nav handle arrow keys and Enter (spatial nav / select).
-      if (event.key === 'Enter' || event.key.startsWith('Arrow')) return;
       event.preventDefault();
       handleValue(mapped);
     };
-
     window.addEventListener('keydown', devKeyHandler);
   }
 }
