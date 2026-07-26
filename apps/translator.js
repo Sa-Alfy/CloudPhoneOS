@@ -2,7 +2,7 @@ import { h, render } from 'https://esm.sh/preact';
 import { useState, useEffect, useRef } from 'https://esm.sh/preact/hooks';
 import htm from 'https://esm.sh/htm';
 import { Toast } from '../core/components.js';
-import { setSoftKeys } from '../core/softkeys.js';
+import { setSoftKeys, pushBackHandler, popBackHandler } from '../core/softkeys.js';
 
 const html = htm.bind(h);
 
@@ -248,7 +248,14 @@ function TranslatorApp({ router }) {
     handleTranslate(true);
   }, []);
 
-  // Set softkey listeners when state changes
+  // Register back handler on mount so physical RSK reliably goes back to home
+  useEffect(() => {
+    const handleBack = () => router.back();
+    pushBackHandler(handleBack);
+    return () => popBackHandler(handleBack);
+  }, [router]);
+
+  // Set softkey LABELS when state changes
   useEffect(() => {
     setSoftKeys({
       left: 'Translate',
@@ -256,7 +263,7 @@ function TranslatorApp({ router }) {
       right: 'Back',
       onLeft: () => handleTranslate(false),
       onCenter: null,
-      onRight: () => router.back()
+      onRight: null  // handled by pushBackHandler above
     });
   }, [inputText, srcLang, dstLang, outputText]);
 

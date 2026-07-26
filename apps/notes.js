@@ -1,9 +1,9 @@
 import { h, render } from 'https://esm.sh/preact';
-import { useState, useEffect } from 'https://esm.sh/preact/hooks';
+import { useState, useEffect, useRef } from 'https://esm.sh/preact/hooks';
 import htm from 'https://esm.sh/htm';
 import { load, save } from '../core/storage.js';
 import { Toast, Dialog } from '../core/components.js';
-import { setSoftKeys } from '../core/softkeys.js';
+import { setSoftKeys, pushBackHandler, popBackHandler } from '../core/softkeys.js';
 
 const html = htm.bind(h);
 
@@ -130,7 +130,28 @@ function NotesApp({ router }) {
     Toast('Previous version restored');
   };
 
-  // Bind Softkey mappings based on current active view
+  // ─── App-level back handler (physical RSK / Back key) ───────────────────────
+  // Registered once on mount, popped on unmount. The handler reads the
+  // latest view value via a ref so it's always up-to-date without
+  // needing to re-register on every render.
+  const viewRef = useRef(view);
+  useEffect(() => { viewRef.current = view; }, [view]);
+
+  useEffect(() => {
+    const handleBack = () => {
+      const cur = viewRef.current;
+      if (cur === 'editor')   { setView('list');   return; }
+      if (cur === 'history')  { setView('editor'); return; }
+      // cur === 'list' — exit to OS
+      router.back();
+    };
+    pushBackHandler(handleBack);
+    return () => popBackHandler(handleBack);
+  }, [router]); // register once
+  // ─────────────────────────────────────────────────────────────────────────
+
+  // Bind Softkey LABELS based on current active view (visual only, back is
+  // now handled by the pushBackHandler above so onRight is not critical here)
   useEffect(() => {
     if (view === 'list') {
       setSoftKeys({
@@ -139,7 +160,7 @@ function NotesApp({ router }) {
         right: 'Back',
         onLeft: () => openEditor(null),
         onCenter: null,
-        onRight: () => router.back()
+        onRight: null  // handled by pushBackHandler
       });
     } else if (view === 'editor') {
       setSoftKeys({
@@ -148,7 +169,7 @@ function NotesApp({ router }) {
         right: 'Cancel',
         onLeft: handleSave,
         onCenter: null,
-        onRight: () => setView('list')
+        onRight: null  // handled by pushBackHandler
       });
     } else if (view === 'history') {
       setSoftKeys({
@@ -157,7 +178,7 @@ function NotesApp({ router }) {
         right: 'Back',
         onLeft: () => selectedHistoryVer && handleRestoreHistory(selectedHistoryVer),
         onCenter: null,
-        onRight: () => setView('editor')
+        onRight: null  // handled by pushBackHandler
       });
     }
   }, [view, noteText, tempTitle, tempContent, activeNote, selectedHistoryVer]);

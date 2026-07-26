@@ -23,6 +23,19 @@ function centerOf(element) {
   };
 }
 
+function getScrollRoot(element) {
+  let node = element?.parentElement || null;
+
+  while (node && node !== document.body) {
+    const style = window.getComputedStyle(node);
+    const scrollableY = (style.overflowY === 'auto' || style.overflowY === 'scroll') && node.scrollHeight > node.clientHeight;
+    if (scrollableY) return node;
+    node = node.parentElement;
+  }
+
+  return container?.closest?.('.ck-app') ?? container;
+}
+
 // How far from the top of .ck-app the focused item should appear (px).
 // 16px gives a small visual gap so the item isn't flush against the header.
 const SCROLL_MARGIN_TOP = 16;
@@ -80,7 +93,7 @@ export function setFocused(element) {
   // KaiOS-style scroll: anchor the focused item near the TOP of the scroll
   // container so the user always sees items below it. When the first item is
   // focused, snap back to scrollTop 0 so no gap ever appears at the top.
-  const scrollRoot = container?.closest?.('.ck-app') ?? container;
+  const scrollRoot = getScrollRoot(target);
   if (!scrollRoot) return;
 
   const isFirst = focusableItems[0] === target;

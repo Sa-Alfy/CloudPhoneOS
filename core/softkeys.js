@@ -4,12 +4,40 @@ let currentCallbacks = { onLeft: null, onCenter: null, onRight: null };
 let lastSoftKeyTimeByAction = { left: 0, center: 0, right: 0 };
 const DEBOUNCE_MS = 300;
 
+// ─── App-level back-handler stack ──────────────────────────────────────────
+// Apps push their own handler on mount and pop it on unmount.
+// The physical RSK / Back key always calls the top of this stack first;
+// only if the stack is empty does it fall through to currentCallbacks.onRight.
+const _backStack = [];
+
+export function pushBackHandler(fn) {
+  if (typeof fn === 'function') _backStack.push(fn);
+}
+
+export function popBackHandler(fn) {
+  const idx = _backStack.lastIndexOf(fn);
+  if (idx !== -1) _backStack.splice(idx, 1);
+}
+// ───────────────────────────────────────────────────────────────────────────
+
 function safeCall(action, fn) {
   if (typeof fn !== 'function') return;
   const now = Date.now();
   if (now - (lastSoftKeyTimeByAction[action] || 0) < DEBOUNCE_MS) return;
   lastSoftKeyTimeByAction[action] = now;
   fn();
+}
+
+function fireBack() {
+  const now = Date.now();
+  if (now - (lastSoftKeyTimeByAction['right'] || 0) < DEBOUNCE_MS) return;
+  lastSoftKeyTimeByAction['right'] = now;
+  // App-level override takes priority over the global router.back()
+  if (_backStack.length > 0) {
+    _backStack[_backStack.length - 1]();
+  } else if (typeof currentCallbacks.onRight === 'function') {
+    currentCallbacks.onRight();
+  }
 }
 
 export function setSoftKeys({ left, center, right, onLeft, onCenter, onRight } = {}) {
@@ -51,7 +79,7 @@ export function initSoftKeys({ onLeft, onCenter, onRight } = {}) {
 
   if (rskBtn) rskBtn.addEventListener('click', (e) => {
     e.preventDefault();
-    safeCall('right', currentCallbacks.onRight);
+    fireBack();
   });
 
   window.addEventListener('keydown', (event) => {
@@ -78,11 +106,11 @@ export function initSoftKeys({ onLeft, onCenter, onRight } = {}) {
       if (event.key === 'Backspace' && (tag === 'INPUT' || tag === 'TEXTAREA')) return;
 
       event.preventDefault();
-      safeCall('right', currentCallbacks.onRight);
+      fireBack();
     }
   });
 
   window.addEventListener('ck:left',   () => safeCall('left', currentCallbacks.onLeft));
   window.addEventListener('ck:center', () => safeCall('center', () => activateFocused()));
-  window.addEventListener('ck:back',   () => safeCall('right', currentCallbacks.onRight));
+  window.addEventListener('ck:back',   () => fireBack());
 }
