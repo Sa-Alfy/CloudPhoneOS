@@ -176,7 +176,7 @@ export function renderTranslator({ root, router }) {
 
       <div class="ck-field">
         <label class="ck-label" for="ck-output">Translation</label>
-        <textarea id="ck-output" class="ck-textarea ck-textarea--short" rows="5" readonly placeholder="Translation appears here"></textarea>
+        <textarea id="ck-output" class="ck-textarea ck-textarea--short" rows="5" readonly placeholder="Translation appears here" data-focusable></textarea>
       </div>
 
       <div class="ck-chip-row" aria-label="Quick phrases">
@@ -220,6 +220,7 @@ export function renderTranslator({ root, router }) {
       const data = await res.json();
       if (data && data[0]) {
         output.value = data[0].map(part => part[0]).join('');
+        output.focus({ preventScroll: true });
         if (!silent) Toast('Translated');
         return;
       }
@@ -229,6 +230,7 @@ export function renderTranslator({ root, router }) {
 
     const translated = translateText(text, src.value, dst.value);
     output.value = translated;
+    output.focus({ preventScroll: true });
     if (!silent) Toast('Translated (Offline)');
   };
 

@@ -67,6 +67,9 @@ export function initSoftKeys({ onLeft, onCenter, onRight } = {}) {
     if (
       event.key === 'SoftRight' ||
       event.key === 'F2' ||
+      event.key === 'BrowserBack' ||
+      event.key === 'GoBack' ||
+      event.key === 'Back' ||
       event.key === 'EndCall' ||
       event.key === 'Backspace'
     ) {
